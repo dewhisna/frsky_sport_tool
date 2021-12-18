@@ -23,6 +23,8 @@
 #include "main.h"
 #include "MainWindow.h"
 
+#include "PersistentSettings.h"
+
 QPointer<QApplication> g_pMyApplication = nullptr;
 
 int main(int argc, char *argv[])
@@ -37,12 +39,16 @@ int main(int argc, char *argv[])
 
 	Q_INIT_RESOURCE(frsky_sport_tool);
 
+	CPersistentSettings::instance()->loadSettings();
+
 	CMainWindow *pWindow = new CMainWindow();
 
 	pWindow->show();
 	int nRetVal = pApp->exec();
 
 	delete pWindow;		// Must delete the window first so that any preserved settings get restored before quitting
+
+	CPersistentSettings::instance()->saveSettings();
 
 	delete pApp;
 

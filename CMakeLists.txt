@@ -44,11 +44,13 @@ set(QT_LINK_LIBS
 set(frsky_sport_tool_SOURCES
 	main.cpp
 	MainWindow.cpp
+	PersistentSettings.cpp
 )
 
 set(frsky_sport_tool_HEADERS
 	main.h
 	MainWindow.h
+	PersistentSettings.h
 )
 
 set(frsky_sport_tool_FORMS
