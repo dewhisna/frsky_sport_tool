@@ -2,5 +2,9 @@
 <RCC version="1.0">
 	<qresource prefix="/">
 		<file>res/exit.png</file>
+		<file>res/iconfinder_dedicated-server_4263512.png</file>
+		<file>res/iconfinder_dedicated-server_4263512_512.png</file>
+		<file>res/iconfinder_dedicated-server_4263512_connected.png</file>
+		<file>res/iconfinder_dedicated-server_4263512_connected_512.png</file>
 	</qresource>
 </RCC>

@@ -24,8 +24,13 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QPointer>
 #include <QAction>
 #include <QActionGroup>
+#include <QScopedPointer>
+#include <QFile>
+#include <QElapsedTimer>
+#include <QTextStream>
 
 // ============================================================================
 
@@ -41,7 +46,20 @@ public:
 	explicit CMainWindow(QWidget *parent = nullptr);
 	~CMainWindow();
 
+protected slots:
+	void en_connect(bool bConnect);
+	void en_configure();
+	void en_writeLogFile(bool bOpen);
+
+protected:
+	QFile m_fileLogFile;
+	QScopedPointer<QTextStream> m_pLogFile;			// Currently open log file
+	QElapsedTimer m_timerLogFile;					// LogFile timestamp keeper
+
 private:
+	QPointer<QAction> m_pConnectAction;
+	QPointer<QAction> m_pChkWriteLogFile;
+
 	Ui::CMainWindow *ui;
 };
 

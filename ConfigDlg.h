@@ -20,17 +20,38 @@
 **
 ****************************************************************************/
 
-#ifndef MAIN_H_
-#define MAIN_H_
+#ifndef CONFIGDLG_H
+#define CONFIGDLG_H
 
-#include <QCoreApplication>
-#include <QApplication>
-#include <QPointer>
+#include <QDialog>
 
 #include <qextserialenumerator.h>
 
-Q_DECLARE_METATYPE(QextPortInfo)
+// ============================================================================
 
-extern QPointer<QApplication> g_pMyApplication;
+namespace Ui {
+	class CConfigDlg;
+}
 
-#endif	// MAIN_H_
+class CConfigDlg : public QDialog
+{
+	Q_OBJECT
+
+public:
+	explicit CConfigDlg(QWidget *parent = nullptr);
+	~CConfigDlg();
+
+	const QextPortInfo &Sport1SerialPortInfo() const { return m_selectedSport1SerialPort; }
+
+protected slots:
+	void en_selectSport1SerialPort(int nIndex);
+
+private:
+	QextPortInfo m_selectedSport1SerialPort;
+
+	Ui::CConfigDlg *ui;
+};
+
+// ============================================================================
+
+#endif // CONFIGDLG_H

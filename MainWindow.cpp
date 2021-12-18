@@ -24,6 +24,17 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 
+#include "PersistentSettings.h"
+#include "ConfigDlg.h"
+
+#include <assert.h>
+
+#ifndef _countof
+#define _countof(x) (sizeof(x)/sizeof(x[0]))
+#endif
+
+// ============================================================================
+
 CMainWindow::CMainWindow(QWidget *parent) :
 	QMainWindow(parent),
 	ui(new Ui::CMainWindow)
@@ -33,18 +44,46 @@ CMainWindow::CMainWindow(QWidget *parent) :
 	// ------------------------------------------------------------------------
 
 	QAction *pAction;
-	QMenu *pFileMenu = ui->menuBar->addMenu(tr("&File"));
+	QMenu *pConnectionMenu = ui->menuBar->addMenu(tr("&Connection"));
 
-	pAction = pFileMenu->addAction(QIcon(":/res/exit.png"), tr("E&xit"));
+	QIcon iconConnect;
+	iconConnect.addPixmap(QPixmap(":/res/iconfinder_dedicated-server_4263512_connected_512.png"), QIcon::Normal, QIcon::On);
+	iconConnect.addPixmap(QPixmap(":/res/iconfinder_dedicated-server_4263512_512.png"), QIcon::Normal, QIcon::Off);
+//	iconConnect.addPixmap(iconConnect.pixmap(QSize(512, 512), QIcon::Disabled, QIcon::Off), QIcon::Normal, QIcon::Off);
+	m_pConnectAction = pConnectionMenu->addAction(iconConnect, tr("&Connect"));
+	m_pConnectAction->setCheckable(true);
+	connect(m_pConnectAction, SIGNAL(toggled(bool)), this, SLOT(en_connect(bool)));		// Toggled instead of triggered so that it works with software as well as user
+
+	ui->toolBar->addAction(m_pConnectAction);
+
+	// ----------
+
+	m_pChkWriteLogFile = pConnectionMenu->addAction(tr("Write &Log File..."));
+	m_pChkWriteLogFile->setCheckable(true);
+	connect(m_pChkWriteLogFile, SIGNAL(toggled(bool)), this, SLOT(en_connect(bool)));	// Toggled instead of triggered so that it works with software as well as user
+
+	// ----------
+
+	pConnectionMenu->addSeparator();
+
+	pAction = pConnectionMenu->addAction(tr("Con&figure..."), this, SLOT(en_configure()));
+	connect(m_pConnectAction, SIGNAL(toggled(bool)), pAction, SLOT(setDisabled(bool)));
+
+	// ----------
+
+	pConnectionMenu->addSeparator();
+
+	pAction = pConnectionMenu->addAction(QIcon(":/res/exit.png"), tr("E&xit"));
 	pAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
 	connect(pAction, &QAction::triggered, g_pMyApplication, &QApplication::quit, Qt::QueuedConnection);
 	QAction *pQuitAction = pAction;
 
 	// --------------------------------
 
+
 	// --------------------------------
 
-//	ui->toolBar->addSeparator();
+	ui->toolBar->addSeparator();
 	ui->toolBar->addAction(pQuitAction);
 }
 
@@ -52,3 +91,22 @@ CMainWindow::~CMainWindow()
 {
 	delete ui;
 }
+
+// ----------------------------------------------------------------------------
+
+void CMainWindow::en_connect(bool bConnect)
+{
+	if (!bConnect) return;
+}
+
+void CMainWindow::en_configure()
+{
+	CConfigDlg dlg;
+	dlg.exec();
+}
+
+void CMainWindow::en_writeLogFile(bool bOpen)
+{
+}
+
+// ============================================================================

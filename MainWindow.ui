@@ -1,4 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
+ <author/>
  <comment>****************************************************************************
 **
 ** Copyright (C) 2021 Donna Whisnant, a.k.a. Dewtronics.
@@ -20,8 +22,6 @@
 ** Dewtronics.
 **
 ****************************************************************************</comment>
- <author/>
- <comment/>
  <exportmacro/>
  <class>CMainWindow</class>
  <widget class="QMainWindow" name="CMainWindow">
