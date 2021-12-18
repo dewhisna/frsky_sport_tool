@@ -61,6 +61,10 @@ set(frsky_sport_tool_RESOURCES
 
 # -----------------------------------------------------------------------------
 
+include(3rdparty/qextserialport.cmake)
+
+# -----------------------------------------------------------------------------
+
 add_executable(frsky_sport_tool
 	${frsky_sport_tool_SOURCES}
 	${frsky_sport_tool_HEADERS}
@@ -70,5 +74,6 @@ add_executable(frsky_sport_tool
 
 target_link_libraries(frsky_sport_tool PRIVATE
 	${QT_LINK_LIBS}
+	qextserialport
 )
 
