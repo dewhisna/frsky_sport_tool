@@ -20,59 +20,42 @@
 **
 ****************************************************************************/
 
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef FRSKY_SPORT_IO_H
+#define FRSKY_SPORT_IO_H
 
 #include "PersistentSettings.h"
 
-#include <QMainWindow>
-#include <QPointer>
-#include <QAction>
-#include <QActionGroup>
-#include <QScopedPointer>
-#include <QFile>
-#include <QElapsedTimer>
-#include <QTextStream>
+#include <QObject>
+#include <QString>
 
-#include "frsky_sport_io.h"
+#include <qextserialport.h>
 
 // ============================================================================
 
-namespace Ui {
-	class CMainWindow;
-}
-
-class CMainWindow : public QMainWindow
+class Cfrsky_sport_io : public QObject
 {
 	Q_OBJECT
-
 public:
-	explicit CMainWindow(QWidget *parent = nullptr);
-	~CMainWindow();
+	Cfrsky_sport_io(SPORT_ID_ENUM nSport, QObject *pParent = nullptr);
+	virtual ~Cfrsky_sport_io();
+
+	SPORT_ID_ENUM getSportID() const { return m_nSportID; }
+
+	bool openPort();
+	void closePort();
+
+	QString getLastError() const { return m_strLastError; }
 
 protected slots:
-	void en_connect(bool bConnect);
-	void en_configure();
-	void en_writeLogFile(bool bOpen);
-	// ----
-	void en_firmwareID();
+	void en_receive();
 
 protected:
-	QFile m_fileLogFile;
-	QScopedPointer<QTextStream> m_pLogFile;			// Currently open log file
-	QElapsedTimer m_timerLogFile;					// LogFile timestamp keeper
-
-	QPointer<Cfrsky_sport_io> m_arrpSport[SPIDE_COUNT];
-
-private:
-	QPointer<QAction> m_pConnectAction;
-	QPointer<QAction> m_pConfigureAction;
-	QPointer<QAction> m_pFirmwareIDAction;
-	QPointer<QAction> m_pChkWriteLogFile;
-
-	Ui::CMainWindow *ui;
+	QString m_strLastError;
+	SPORT_ID_ENUM m_nSportID;
+	QextSerialPort m_serialPort;
 };
 
 // ============================================================================
 
-#endif // MAINWINDOW_H
+#endif	// FRSKY_SPORT_IO_H
+

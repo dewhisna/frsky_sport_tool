@@ -27,6 +27,9 @@
 #include "PersistentSettings.h"
 #include "ConfigDlg.h"
 
+#include <QMessageBox>
+#include <QTimer>
+
 #include <assert.h>
 
 #ifndef _countof
@@ -40,6 +43,12 @@ CMainWindow::CMainWindow(QWidget *parent) :
 	ui(new Ui::CMainWindow)
 {
 	ui->setupUi(this);
+
+	// ------------------------------------------------------------------------
+
+	for (int nSport = 0; nSport < SPIDE_COUNT; ++nSport) {
+		m_arrpSport[nSport] = new Cfrsky_sport_io(static_cast<SPORT_ID_ENUM>(nSport), this);
+	}
 
 	// ------------------------------------------------------------------------
 
@@ -66,8 +75,8 @@ CMainWindow::CMainWindow(QWidget *parent) :
 
 	pConnectionMenu->addSeparator();
 
-	pAction = pConnectionMenu->addAction(tr("Con&figure..."), this, SLOT(en_configure()));
-	connect(m_pConnectAction, SIGNAL(toggled(bool)), pAction, SLOT(setDisabled(bool)));
+	m_pConfigureAction = pConnectionMenu->addAction(tr("Con&figure..."), this, SLOT(en_configure()));
+	m_pConfigureAction->setDisabled(m_pConnectAction->isChecked());
 
 	// ----------
 
@@ -80,11 +89,24 @@ CMainWindow::CMainWindow(QWidget *parent) :
 
 	// --------------------------------
 
+	QMenu *pFirmwareMenu = ui->menuBar->addMenu(tr("&Firmware"));
+
+	m_pFirmwareIDAction = pFirmwareMenu->addAction(tr("&ID Firmware..."), this, SLOT(en_firmwareID()));
+	m_pFirmwareIDAction->setEnabled(m_pConnectAction->isChecked());
+
 
 	// --------------------------------
 
 	ui->toolBar->addSeparator();
 	ui->toolBar->addAction(pQuitAction);
+
+	// --------------------------------
+
+
+	connect(m_pConnectAction, &QAction::toggled, this, [this](bool bConnected)->void {
+		m_pConfigureAction->setDisabled(bConnected);
+		m_pFirmwareIDAction->setEnabled(bConnected);
+	});
 }
 
 CMainWindow::~CMainWindow()
@@ -97,6 +119,18 @@ CMainWindow::~CMainWindow()
 void CMainWindow::en_connect(bool bConnect)
 {
 	if (!bConnect) return;
+
+	assert(!m_arrpSport[SPIDE_SPORT1].isNull());
+
+	if (!m_arrpSport[SPIDE_SPORT1]->openPort()) {
+		QMessageBox::critical(this, tr("Connection Error"), m_arrpSport[SPIDE_SPORT1]->getLastError());
+		// Note: Even though the above 'if' will guard against re-entrancy if
+		//	we were to just call setChecked here directly, we must do this on
+		//	a singleShot or else Qt won't propagate the toggled() signal to
+		//	the connections for the other controls to get reenabled:
+		QTimer::singleShot(1, m_pConnectAction, [this](){ m_pConnectAction->setChecked(false); });
+		return;
+	}
 }
 
 void CMainWindow::en_configure()
@@ -106,6 +140,10 @@ void CMainWindow::en_configure()
 }
 
 void CMainWindow::en_writeLogFile(bool bOpen)
+{
+}
+
+void CMainWindow::en_firmwareID()
 {
 }
 
