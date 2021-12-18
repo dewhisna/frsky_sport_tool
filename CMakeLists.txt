@@ -47,6 +47,7 @@ set(frsky_sport_tool_SOURCES
 	PersistentSettings.cpp
 	ConfigDlg.cpp
 	frsky_sport_io.cpp
+	SaveLoadFileDialog.cpp
 )
 
 set(frsky_sport_tool_HEADERS
@@ -55,6 +56,7 @@ set(frsky_sport_tool_HEADERS
 	PersistentSettings.h
 	ConfigDlg.h
 	frsky_sport_io.h
+	SaveLoadFileDialog.h
 )
 
 set(frsky_sport_tool_FORMS

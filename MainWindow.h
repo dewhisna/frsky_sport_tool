@@ -50,6 +50,9 @@ public:
 	explicit CMainWindow(QWidget *parent = nullptr);
 	~CMainWindow();
 
+public slots:
+	void writeLogString(SPORT_ID_ENUM nSport, const QString &strLogString);
+
 protected slots:
 	void en_connect(bool bConnect);
 	void en_configure();
@@ -67,8 +70,8 @@ protected:
 private:
 	QPointer<QAction> m_pConnectAction;
 	QPointer<QAction> m_pConfigureAction;
+	QPointer<QAction> m_pWriteLogFileAction;
 	QPointer<QAction> m_pFirmwareIDAction;
-	QPointer<QAction> m_pChkWriteLogFile;
 
 	Ui::CMainWindow *ui;
 };

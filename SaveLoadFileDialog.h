@@ -20,45 +20,41 @@
 **
 ****************************************************************************/
 
-#ifndef FRSKY_SPORT_IO_H
-#define FRSKY_SPORT_IO_H
+#ifndef SAVE_LOAD_FILE_DIALOG_H
+#define SAVE_LOAD_FILE_DIALOG_H
 
-#include "PersistentSettings.h"
-
-#include <QObject>
 #include <QString>
-
-#include <qextserialport.h>
+#include <QWidget>
+#include <QFileDialog>
 
 // ============================================================================
 
-class Cfrsky_sport_io : public QObject
+class CSaveLoadFileDialog
 {
-	Q_OBJECT
 public:
-	Cfrsky_sport_io(SPORT_ID_ENUM nSport, QObject *pParent = nullptr);
-	virtual ~Cfrsky_sport_io();
+	static QString getSaveFileName(QWidget *parent = nullptr,
+												const QString &caption = QString(),
+												const QString &dir = QString(),
+												const QString &filter = QString(),
+												const QString &strDefaultSuffix = QString(),
+												QString *selectedFilter = nullptr,
+												QFileDialog::Options options = QFileDialog::Options());
 
-	SPORT_ID_ENUM getSportID() const { return m_nSportID; }
-
-	bool openPort();
-	void closePort();
-
-	QString getLastError() const { return m_strLastError; }
-
-signals:
-	void writeLogString(SPORT_ID_ENUM nSport, const QString &strLogString);
-
-protected slots:
-	void en_receive();
+	static QString getOpenFileName(QWidget *parent = nullptr,
+												const QString &caption = QString(),
+												const QString &dir = QString(),
+												const QString &filter = QString(),
+												QString *selectedFilter = nullptr,
+												QFileDialog::Options options = QFileDialog::Options());
 
 protected:
-	QString m_strLastError;
-	SPORT_ID_ENUM m_nSportID;
-	QextSerialPort m_serialPort;
+	static void setLastPath(const QString &strPath);
+	static QString lastPath();
+
+private:
+	static QString m_strLastPath;
 };
 
 // ============================================================================
 
-#endif	// FRSKY_SPORT_IO_H
-
+#endif		// SAVE_LOAD_FILE_DIALOG_H

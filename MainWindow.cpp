@@ -26,6 +26,7 @@
 
 #include "PersistentSettings.h"
 #include "ConfigDlg.h"
+#include "SaveLoadFileDialog.h"
 
 #include <QMessageBox>
 #include <QTimer>
@@ -48,6 +49,8 @@ CMainWindow::CMainWindow(QWidget *parent) :
 
 	for (int nSport = 0; nSport < SPIDE_COUNT; ++nSport) {
 		m_arrpSport[nSport] = new Cfrsky_sport_io(static_cast<SPORT_ID_ENUM>(nSport), this);
+		connect(m_arrpSport[nSport], SIGNAL(writeLogString(SPORT_ID_ENUM,QString)),
+				this, SLOT(writeLogString(SPORT_ID_ENUM,QString)));
 	}
 
 	// ------------------------------------------------------------------------
@@ -67,9 +70,9 @@ CMainWindow::CMainWindow(QWidget *parent) :
 
 	// ----------
 
-	m_pChkWriteLogFile = pConnectionMenu->addAction(tr("Write &Log File..."));
-	m_pChkWriteLogFile->setCheckable(true);
-	connect(m_pChkWriteLogFile, SIGNAL(toggled(bool)), this, SLOT(en_connect(bool)));	// Toggled instead of triggered so that it works with software as well as user
+	m_pWriteLogFileAction = pConnectionMenu->addAction(tr("Write &Log File..."));
+	m_pWriteLogFileAction->setCheckable(true);
+	connect(m_pWriteLogFileAction, SIGNAL(toggled(bool)), this, SLOT(en_writeLogFile(bool)));	// Toggled instead of triggered so that it works with software as well as user
 
 	// ----------
 
@@ -102,11 +105,14 @@ CMainWindow::CMainWindow(QWidget *parent) :
 
 	// --------------------------------
 
-
 	connect(m_pConnectAction, &QAction::toggled, this, [this](bool bConnected)->void {
 		m_pConfigureAction->setDisabled(bConnected);
 		m_pFirmwareIDAction->setEnabled(bConnected);
 	});
+
+	// --------------------------------
+
+	m_timerLogFile.start();
 }
 
 CMainWindow::~CMainWindow()
@@ -131,6 +137,10 @@ void CMainWindow::en_connect(bool bConnect)
 		QTimer::singleShot(1, m_pConnectAction, [this](){ m_pConnectAction->setChecked(false); });
 		return;
 	}
+
+	if (!m_pWriteLogFileAction->isChecked()) {
+		m_timerLogFile.restart();
+	}
 }
 
 void CMainWindow::en_configure()
@@ -141,6 +151,53 @@ void CMainWindow::en_configure()
 
 void CMainWindow::en_writeLogFile(bool bOpen)
 {
+	if (bOpen) {
+		QString strFilePathName = CSaveLoadFileDialog::getSaveFileName(
+					this,
+					tr("Save Log File", "FileFilters"),
+					CPersistentSettings::instance()->getLogFileLastPath(),
+					tr("Log Files (*.log)", "FileFilters"),
+					"log",
+					nullptr,
+					QFileDialog::Options());
+		if (!strFilePathName.isEmpty()) {
+			CPersistentSettings::instance()->setLogFileLastPath(strFilePathName);
+
+			m_fileLogFile.setFileName(strFilePathName);
+			if (!m_fileLogFile.open(QIODevice::WriteOnly)) {
+				QMessageBox::warning(this, tr("Opening Log File"), tr("Error: Couldn't open Log File \"%1\" for writing.").arg(strFilePathName));
+				// Note: Even though the above 'if' will guard against re-entrancy if
+				//	we were to just call setChecked here directly, we must do this on
+				//	a singleShot or else Qt won't propagate the toggled() signal to
+				//	the connections for the other controls to get reenabled:
+				QTimer::singleShot(1, m_pWriteLogFileAction, [this](){ m_pWriteLogFileAction->setChecked(false); });
+				return;
+			}
+			m_pLogFile.reset(new QTextStream(static_cast<QIODevice *>(&m_fileLogFile)));
+
+			m_timerLogFile.restart();
+		} else {
+			// Note: Even though the above 'if' will guard against re-entrancy if
+			//	we were to just call setChecked here directly, we must do this on
+			//	a singleShot or else Qt won't propagate the toggled() signal to
+			//	the connections for the other controls to get reenabled:
+			QTimer::singleShot(1, m_pWriteLogFileAction, [this](){ m_pWriteLogFileAction->setChecked(false); });
+			return;
+		}
+	} else {
+		// Close log file:
+		m_pLogFile.reset();
+		m_fileLogFile.close();
+	}
+}
+
+void CMainWindow::writeLogString(SPORT_ID_ENUM nSport, const QString &strLogString)
+{
+	if (!m_pLogFile.isNull() && m_pLogFile->device()->isOpen() && m_pLogFile->device()->isWritable()) {
+		QStringList lstLogData;
+		double nElapsedTime = static_cast<double>(m_timerLogFile.nsecsElapsed())/1000000.0;
+		(*m_pLogFile) << QString("%1").arg(nElapsedTime, 0, 'f', 4) << ": " << QString::number(nSport) << ": " << strLogString << Qt::endl;
+	}
 }
 
 void CMainWindow::en_firmwareID()
