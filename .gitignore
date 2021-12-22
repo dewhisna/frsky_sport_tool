@@ -22,3 +22,6 @@ CMakeLists.txt.user*
 *.qm
 *.pyc
 
+# Junk Folders:
+/**/junk
+
