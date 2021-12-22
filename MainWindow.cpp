@@ -48,7 +48,7 @@ CMainWindow::CMainWindow(QWidget *parent) :
 	// ------------------------------------------------------------------------
 
 	for (int nSport = 0; nSport < SPIDE_COUNT; ++nSport) {
-		m_arrpSport[nSport] = new Cfrsky_sport_io(static_cast<SPORT_ID_ENUM>(nSport), this);
+		m_arrpSport[nSport] = new CFrskySportIO(static_cast<SPORT_ID_ENUM>(nSport), this);
 		connect(m_arrpSport[nSport], SIGNAL(writeLogString(SPORT_ID_ENUM,QString)),
 				this, SLOT(writeLogString(SPORT_ID_ENUM,QString)));
 	}

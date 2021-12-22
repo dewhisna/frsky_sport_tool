@@ -65,7 +65,7 @@ protected:
 	QScopedPointer<QTextStream> m_pLogFile;			// Currently open log file
 	QElapsedTimer m_timerLogFile;					// LogFile timestamp keeper
 
-	QPointer<Cfrsky_sport_io> m_arrpSport[SPIDE_COUNT];
+	QPointer<CFrskySportIO> m_arrpSport[SPIDE_COUNT];
 
 private:
 	QPointer<QAction> m_pConnectAction;
