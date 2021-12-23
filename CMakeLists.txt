@@ -33,10 +33,11 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets SerialPort REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets SerialPort REQUIRED)
 set(QT_LINK_LIBS
 	Qt${QT_VERSION_MAJOR}::Widgets
+	Qt${QT_VERSION_MAJOR}::SerialPort
 )
 
 # -----------------------------------------------------------------------------
@@ -76,10 +77,6 @@ set(frsky_sport_tool_RESOURCES
 
 # -----------------------------------------------------------------------------
 
-include(3rdparty/qextserialport.cmake)
-
-# -----------------------------------------------------------------------------
-
 add_executable(frsky_sport_tool
 	${frsky_sport_tool_SOURCES}
 	${frsky_sport_tool_HEADERS}
@@ -89,6 +86,5 @@ add_executable(frsky_sport_tool
 
 target_link_libraries(frsky_sport_tool PRIVATE
 	${QT_LINK_LIBS}
-	qextserialport
 )
 

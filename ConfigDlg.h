@@ -25,7 +25,7 @@
 
 #include <QDialog>
 
-#include <qextserialenumerator.h>
+#include <QSerialPortInfo>
 
 // ============================================================================
 
@@ -41,13 +41,13 @@ public:
 	explicit CConfigDlg(QWidget *parent = nullptr);
 	~CConfigDlg();
 
-	const QextPortInfo &Sport1SerialPortInfo() const { return m_selectedSport1SerialPort; }
+	const QSerialPortInfo &Sport1SerialPortInfo() const { return m_selectedSport1SerialPort; }
 
 protected slots:
 	void en_selectSport1SerialPort(int nIndex);
 
 private:
-	QextPortInfo m_selectedSport1SerialPort;
+	QSerialPortInfo m_selectedSport1SerialPort;
 
 	Ui::CConfigDlg *ui;
 };

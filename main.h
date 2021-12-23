@@ -27,9 +27,9 @@
 #include <QApplication>
 #include <QPointer>
 
-#include <qextserialenumerator.h>
+#include <QSerialPortInfo>
 
-Q_DECLARE_METATYPE(QextPortInfo)
+Q_DECLARE_METATYPE(QSerialPortInfo)
 
 extern QPointer<QApplication> g_pMyApplication;
 

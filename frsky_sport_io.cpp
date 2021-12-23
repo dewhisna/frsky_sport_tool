@@ -132,32 +132,31 @@ bool CFrskySportIO::openPort()
 	}
 
 	m_serialPort.setPortName(CPersistentSettings::instance()->getDeviceSerialPort(m_nSportID));
-	m_serialPort.setQueryMode(QextSerialPort::EventDriven);
-	m_serialPort.setBaudRate(static_cast<BaudRateType>(CPersistentSettings::instance()->getDeviceBaudRate(m_nSportID)));
-	m_serialPort.setFlowControl(FLOW_OFF);
+	m_serialPort.setBaudRate(CPersistentSettings::instance()->getDeviceBaudRate(m_nSportID));
+	m_serialPort.setFlowControl(QSerialPort::NoFlowControl);
 	char chParity = CPersistentSettings::instance()->getDeviceParity(m_nSportID);
 	switch (chParity) {
 		case 'N':
 		case 'n':
-			m_serialPort.setParity(PAR_NONE);
+			m_serialPort.setParity(QSerialPort::NoParity);
 			break;
 		case 'O':
 		case 'o':
-			m_serialPort.setParity(PAR_ODD);
+			m_serialPort.setParity(QSerialPort::OddParity);
 			break;
 		case 'E':
 		case 'e':
-			m_serialPort.setParity(PAR_EVEN);
+			m_serialPort.setParity(QSerialPort::EvenParity);
 			break;
 	}
-	m_serialPort.setDataBits(static_cast<DataBitsType>(CPersistentSettings::instance()->getDeviceDataBits(m_nSportID)));
+	m_serialPort.setDataBits(static_cast<QSerialPort::DataBits>(CPersistentSettings::instance()->getDeviceDataBits(m_nSportID)));
 	int nStopBits = CPersistentSettings::instance()->getDeviceStopBits(m_nSportID);
 	switch (nStopBits) {
 		case 1:
-			m_serialPort.setStopBits(STOP_1);
+			m_serialPort.setStopBits(QSerialPort::OneStop);
 			break;
 		case 2:
-			m_serialPort.setStopBits(STOP_2);
+			m_serialPort.setStopBits(QSerialPort::TwoStop);
 			break;
 	}
 

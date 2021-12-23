@@ -26,8 +26,6 @@
 #include "main.h"
 #include "PersistentSettings.h"
 
-#include <qextserialenumerator.h>
-
 // ============================================================================
 
 CConfigDlg::CConfigDlg(QWidget *parent) :
@@ -37,14 +35,19 @@ CConfigDlg::CConfigDlg(QWidget *parent) :
 	ui->setupUi(this);
 
 	ui->comboSport1SerialPort->clear();
-	ui->comboSport1SerialPort->addItem(QString(), QVariant::fromValue(QextPortInfo()));
-	foreach(QextPortInfo port, QextSerialEnumerator::getPorts()) {
-		ui->comboSport1SerialPort->addItem(port.physName, QVariant::fromValue(port));
+	ui->comboSport1SerialPort->addItem(QString(), QVariant::fromValue(QSerialPortInfo()));
+	foreach(QSerialPortInfo port, QSerialPortInfo::availablePorts()) {
+#ifdef Q_OS_WIN
+		ui->comboSport1SerialPort->addItem(port.portName(), QVariant::fromValue(port));
+#else
+		ui->comboSport1SerialPort->addItem(port.systemLocation(), QVariant::fromValue(port));
+#endif
 	}
 	connect(ui->comboSport1SerialPort, SIGNAL(currentIndexChanged(int)), this, SLOT(en_selectSport1SerialPort(int)));
 	ui->comboSport1SerialPort->setCurrentText(CPersistentSettings::instance()->getDeviceSerialPort(SPIDE_SPORT1));	// This will trigger change event
 
 	ui->comboSport1BaudRate->clear();
+	ui->comboSport1BaudRate->addItem("1200", QVariant(1200));
 	ui->comboSport1BaudRate->addItem("2400", QVariant(2400));
 	ui->comboSport1BaudRate->addItem("4800", QVariant(4800));
 	ui->comboSport1BaudRate->addItem("9600", QVariant(9600));
@@ -53,8 +56,6 @@ CConfigDlg::CConfigDlg(QWidget *parent) :
 	ui->comboSport1BaudRate->addItem("38400", QVariant(38400));
 	ui->comboSport1BaudRate->addItem("57600", QVariant(57600));
 	ui->comboSport1BaudRate->addItem("115200", QVariant(115200));
-	ui->comboSport1BaudRate->addItem("128000", QVariant(128000));
-	ui->comboSport1BaudRate->addItem("256000", QVariant(256000));
 	ui->comboSport1BaudRate->setCurrentText(QString::number(CPersistentSettings::instance()->getDeviceBaudRate(SPIDE_SPORT1)));
 
 	ui->comboSport1Parity->clear();
@@ -76,7 +77,11 @@ CConfigDlg::CConfigDlg(QWidget *parent) :
 	// --------------------------------
 
 	connect(this, &QDialog::accepted, [&]()->void {
-		CPersistentSettings::instance()->setDeviceSerialPort(SPIDE_SPORT1, m_selectedSport1SerialPort.physName);
+#ifdef Q_OS_WIN
+		CPersistentSettings::instance()->setDeviceSerialPort(SPIDE_SPORT1, m_selectedSport1SerialPort.portName());
+#else
+		CPersistentSettings::instance()->setDeviceSerialPort(SPIDE_SPORT1, m_selectedSport1SerialPort.systemLocation());
+#endif
 		CPersistentSettings::instance()->setDeviceBaudRate(SPIDE_SPORT1, ui->comboSport1BaudRate->currentData().toInt());
 		CPersistentSettings::instance()->setDeviceParity(SPIDE_SPORT1, ui->comboSport1Parity->currentData().toChar().toLatin1());
 		CPersistentSettings::instance()->setDeviceDataBits(SPIDE_SPORT1, ui->comboSport1DataBits->currentData().toInt());
@@ -96,9 +101,9 @@ CConfigDlg::~CConfigDlg()
 void CConfigDlg::en_selectSport1SerialPort(int nIndex)
 {
 	if (nIndex == -1) {
-		m_selectedSport1SerialPort = QextPortInfo();
+		m_selectedSport1SerialPort = QSerialPortInfo();
 	} else {
-		m_selectedSport1SerialPort = ui->comboSport1SerialPort->currentData().value<QextPortInfo>();
+		m_selectedSport1SerialPort = ui->comboSport1SerialPort->currentData().value<QSerialPortInfo>();
 	}
 }
 

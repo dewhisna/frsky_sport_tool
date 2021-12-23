@@ -31,7 +31,7 @@
 #include <QString>
 #include <QByteArray>
 
-#include <qextserialport.h>
+#include <QSerialPort>
 
 #include <assert.h>
 
@@ -296,7 +296,7 @@ public:
 	virtual ~CFrskySportIO();
 
 	SPORT_ID_ENUM getSportID() const { return m_nSportID; }
-	QextSerialPort &port() { return m_serialPort; }
+	QSerialPort &port() { return m_serialPort; }
 
 	bool openPort();
 	void closePort();
@@ -312,7 +312,7 @@ protected slots:
 protected:
 	QString m_strLastError;
 	SPORT_ID_ENUM m_nSportID;
-	QextSerialPort m_serialPort;
+	QSerialPort m_serialPort;
 };
 
 // ============================================================================

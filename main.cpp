@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 	pApp->setOrganizationName("Dewtronics");
 	pApp->setOrganizationDomain("dewtronics.com");
 
-	qRegisterMetaType<QextPortInfo>("QextPortInfo");
+	qRegisterMetaType<QSerialPortInfo>("QSerialPortInfo");
 
 	Q_INIT_RESOURCE(frsky_sport_tool);
 
