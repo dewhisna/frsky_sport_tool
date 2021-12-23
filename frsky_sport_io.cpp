@@ -165,7 +165,6 @@ bool CFrskySportIO::openPort()
 		return false;
 	}
 
-	connect(&m_serialPort, SIGNAL(readyRead()), this, SLOT(en_receive()));
 	return true;
 }
 
@@ -174,14 +173,10 @@ void CFrskySportIO::closePort()
 	if (!m_serialPort.isOpen()) return;
 
 	m_serialPort.close();
-	disconnect(&m_serialPort, SIGNAL(readyRead()), this, SLOT(en_receive()));
 }
 
 // ----------------------------------------------------------------------------
 
-void CFrskySportIO::en_receive()
-{
-}
 
 // ============================================================================
 

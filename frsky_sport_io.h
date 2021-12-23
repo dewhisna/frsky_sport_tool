@@ -307,9 +307,6 @@ public:
 signals:
 	void writeLogString(SPORT_ID_ENUM nSport, const QString &strLogString);
 
-protected slots:
-	void en_receive();
-
 protected:
 	QString m_strLastError;
 	SPORT_ID_ENUM m_nSportID;
