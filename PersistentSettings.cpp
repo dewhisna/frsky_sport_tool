@@ -43,6 +43,11 @@ namespace {
 	// ----
 	const QString constrSportPortKey("SportPort");
 	const QString constrLogTxEchosKey("LogTxEchos");
+	// ----
+	const QString constrFirmwareGroup("Firmware");
+	const QString constrLastReadPathKey("LastReadPath");
+	const QString constrLastWritePathKey("LastWritePath");
+	// ----
 
 	// ------------------------------------------------------------------------
 
@@ -124,6 +129,13 @@ void CPersistentSettings::saveSettings()
 	setValue(constrSportPortKey, m_nDataConfigSportPort);
 	setValue(constrLogTxEchosKey, m_bDataConfigLogTxEchos);
 	endGroup();
+
+	// Firmware Settings:
+	// ------------------
+	beginGroup(constrFirmwareGroup);
+	setValue(constrLastReadPathKey, m_strFirmwareLastReadPath);
+	setValue(constrLastWritePathKey, m_strFirmwareLastWritePath);
+	endGroup();
 }
 
 void CPersistentSettings::loadSettings()
@@ -156,6 +168,13 @@ void CPersistentSettings::loadSettings()
 	beginGroup(constrDataConfigCommGroup);
 	m_nDataConfigSportPort = static_cast<SPORT_ID_ENUM>(value(constrSportPortKey, m_nDataConfigSportPort).toInt());
 	m_bDataConfigLogTxEchos = value(constrLogTxEchosKey, m_bDataConfigLogTxEchos).toBool();
+	endGroup();
+
+	// Firmware Settings:
+	// ------------------
+	beginGroup(constrFirmwareGroup);
+	m_strFirmwareLastReadPath = value(constrLastReadPathKey, m_strFirmwareLastReadPath).toString();
+	m_strFirmwareLastWritePath = value(constrLastWritePathKey, m_strFirmwareLastWritePath).toString();
 	endGroup();
 }
 

@@ -84,6 +84,11 @@ public:
 
 	// ----
 
+	QString getFirmwareLastReadPath() const { return m_strFirmwareLastReadPath; }
+	QString getFirmwareLastWritePath() const { return m_strFirmwareLastWritePath; }
+
+	// ----
+
 	// --------------------------------
 
 public slots:
@@ -104,6 +109,11 @@ public slots:
 	// ----
 	void setDataConfigSportPort(SPORT_ID_ENUM nPort) { m_nDataConfigSportPort = nPort; }
 	void setDataConfigLogTxEchos(bool bLogEchos) { m_bDataConfigLogTxEchos = bLogEchos; }
+
+	// ----
+
+	void setFirmwareLastReadPath(const QString &strLastPath) { m_strFirmwareLastReadPath = strLastPath; }
+	void setFirmwareLastWritePath(const QString &strLastPath) { m_strFirmwareLastWritePath = strLastPath; }
 
 	// ----
 
@@ -129,6 +139,12 @@ protected:
 	// ----
 	SPORT_ID_ENUM m_nDataConfigSportPort;
 	bool m_bDataConfigLogTxEchos;
+	// ----
+
+	// Firmware Settings:
+	// ------------------
+	QString m_strFirmwareLastReadPath;
+	QString m_strFirmwareLastWritePath;
 	// ----
 
 private:
