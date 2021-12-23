@@ -514,7 +514,7 @@ CFrskyDeviceFirmwareUpdate::CFrskyDeviceFirmwareUpdate(CFrskySportIO &frskySport
 		m_frskySportIO(frskySportIO),
 		m_pUICallback(pUICallback)
 {
-	connect(&m_frskySportIO, SIGNAL(readyRead()), this, SLOT(en_readyRead()));
+	connect(&m_frskySportIO.port(), SIGNAL(readyRead()), this, SLOT(en_readyRead()));
 	connect(this, SIGNAL(dataAvailable()), this, SLOT(en_receive()), Qt::QueuedConnection);
 
 	connect(&m_tmrEventTimeout, SIGNAL(timeout()), this, SLOT(en_timeout()), Qt::DirectConnection);
