@@ -27,7 +27,7 @@
 // ============================================================================
 
 namespace {
-	const QString conarrstrSportSettingsGroup[SPIDE_COUNT] = { "Sport1", };
+	const QString conarrstrSportSettingsGroup[SPIDE_COUNT] = { "Sport1", "Sport2", };
 	// ----
 	const QString constrSerialPortKey("SerialPort");
 	const QString constrBaudRateKey("BaudRate");
@@ -37,12 +37,27 @@ namespace {
 	// ----
 	const QString constrLogFileSettingsGroup("LogFile");
 	const QString constrLogFileLastPathKey("LastPath");
+	// ----
+	const QString constrFirmwareCommGroup("FirmwareComm");
+	const QString constrDataConfigCommGroup("DataConfigComm");
+	// ----
+	const QString constrSportPortKey("SportPort");
+	const QString constrLogTxEchosKey("LogTxEchos");
 
 	// ------------------------------------------------------------------------
 
 	const DEVICE_SETTINGS conarrDefaultDeviceSettings[SPIDE_COUNT] =
 	{
 		// Sport1:
+		{
+			QString(),					// SerialPort
+			57600,						// BaudRate
+			'N',						// Parity
+			8,							// DataBits
+			1,							// StopBits
+		},
+
+		// Sport2:
 		{
 			QString(),					// SerialPort
 			57600,						// BaudRate
@@ -57,7 +72,11 @@ namespace {
 // ============================================================================
 
 CPersistentSettings::CPersistentSettings(QObject *parent)
-	:	QSettings(parent)
+	:	QSettings(parent),
+		m_nFirmwareSportPort(SPIDE_SPORT1),
+		m_bFirmwareLogTxEchos(false),
+		m_nDataConfigSportPort(SPIDE_SPORT2),
+		m_bDataConfigLogTxEchos(false)
 {
 	for (int nSport = 0; nSport < SPIDE_COUNT; ++nSport) {
 		m_deviceSettings[nSport] = conarrDefaultDeviceSettings[nSport];
@@ -88,11 +107,22 @@ void CPersistentSettings::saveSettings()
 		endGroup();
 	}
 
-
 	// LogFile Settings:
 	// -----------------
 	beginGroup(constrLogFileSettingsGroup);
 	setValue(constrLogFileLastPathKey, m_strLogFileLastPath);
+	endGroup();
+
+	// Comm Settings:
+	// --------------
+	beginGroup(constrFirmwareCommGroup);
+	setValue(constrSportPortKey, m_nFirmwareSportPort);
+	setValue(constrLogTxEchosKey, m_bFirmwareLogTxEchos);
+	endGroup();
+	// ----
+	beginGroup(constrDataConfigCommGroup);
+	setValue(constrSportPortKey, m_nDataConfigSportPort);
+	setValue(constrLogTxEchosKey, m_bDataConfigLogTxEchos);
 	endGroup();
 }
 
@@ -114,6 +144,18 @@ void CPersistentSettings::loadSettings()
 	// -----------------
 	beginGroup(constrLogFileSettingsGroup);
 	m_strLogFileLastPath = value(constrLogFileLastPathKey, m_strLogFileLastPath).toString();
+	endGroup();
+
+	// Comm Settings:
+	// --------------
+	beginGroup(constrFirmwareCommGroup);
+	m_nFirmwareSportPort = static_cast<SPORT_ID_ENUM>(value(constrSportPortKey, m_nFirmwareSportPort).toInt());
+	m_bFirmwareLogTxEchos = value(constrLogTxEchosKey, m_bFirmwareLogTxEchos).toBool();
+	endGroup();
+	// ----
+	beginGroup(constrDataConfigCommGroup);
+	m_nDataConfigSportPort = static_cast<SPORT_ID_ENUM>(value(constrSportPortKey, m_nDataConfigSportPort).toInt());
+	m_bDataConfigLogTxEchos = value(constrLogTxEchosKey, m_bDataConfigLogTxEchos).toBool();
 	endGroup();
 }
 

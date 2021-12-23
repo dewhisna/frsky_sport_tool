@@ -26,13 +26,179 @@
   <property name="windowTitle">
    <string>Communications Configuration</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_5">
+  <property name="sizeGripEnabled">
+   <bool>true</bool>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="1" column="0" colspan="2">
+    <widget class="QFrame" name="framePortMapping">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QGridLayout" name="gridLayout3">
+      <item row="0" column="1">
+       <widget class="QComboBox" name="comboFirmwarePort"/>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="comboDataConfigPort"/>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="lblFirmwarePort">
+        <property name="text">
+         <string>Firmware Port:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="buddy">
+         <cstring>comboFirmwarePort</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="lblDataConfigPort">
+        <property name="text">
+         <string>Data/Config Port:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="buddy">
+         <cstring>comboDataConfigPort</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QCheckBox" name="chkBoxFirmwareLogTxEchos">
+        <property name="text">
+         <string>Log Tx Echos</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QCheckBox" name="chkBoxDataConfigLogTxEchos">
+        <property name="text">
+         <string>Log Tx Echos</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QGroupBox" name="grpBoxSport2">
+     <property name="title">
+      <string>S.port #2</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout2">
+      <item row="0" column="0">
+       <widget class="QLabel" name="lblSport2SerialPort">
+        <property name="text">
+         <string>&amp;Serial Port:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="buddy">
+         <cstring>comboSport1SerialPort</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1" colspan="2">
+       <widget class="QComboBox" name="comboSport2DataBits"/>
+      </item>
+      <item row="0" column="1" colspan="2">
+       <widget class="QComboBox" name="comboSport2SerialPort"/>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="lblSport2StopBits">
+        <property name="text">
+         <string>S&amp;top Bits:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="buddy">
+         <cstring>comboSport1StopBits</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="lblSport2BaudRate">
+        <property name="text">
+         <string>&amp;Baud Rate:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="buddy">
+         <cstring>comboSport1BaudRate</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1" colspan="2">
+       <widget class="QComboBox" name="comboSport2StopBits"/>
+      </item>
+      <item row="2" column="1" colspan="2">
+       <widget class="QComboBox" name="comboSport2Parity"/>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="lblSport2DataBits">
+        <property name="text">
+         <string>&amp;Data Bits:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="buddy">
+         <cstring>comboSport1DataBits</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="1">
+       <spacer name="verticalSpacer2">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>0</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="lblSport2Parity">
+        <property name="text">
+         <string>&amp;Parity:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="buddy">
+         <cstring>comboSport1Parity</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1" colspan="2">
+       <widget class="QComboBox" name="comboSport2BaudRate"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
    <item row="0" column="0">
     <widget class="QGroupBox" name="grpBoxSport1">
      <property name="title">
       <string>S.port #1</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout">
+     <layout class="QGridLayout" name="gridLayout1">
       <item row="0" column="0">
        <widget class="QLabel" name="lblSport1SerialPort">
         <property name="text">
@@ -98,7 +264,7 @@
        </widget>
       </item>
       <item row="10" column="1">
-       <spacer name="verticalSpacer">
+       <spacer name="verticalSpacer1">
         <property name="orientation">
          <enum>Qt::Vertical</enum>
         </property>
@@ -129,7 +295,20 @@
      </layout>
     </widget>
    </item>
-   <item row="1" column="0" colspan="2">
+   <item row="0" column="2" rowspan="2">
+    <spacer name="horizontalSpacer">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>0</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="2" column="0" colspan="3">
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -147,6 +326,15 @@
   <tabstop>comboSport1Parity</tabstop>
   <tabstop>comboSport1DataBits</tabstop>
   <tabstop>comboSport1StopBits</tabstop>
+  <tabstop>comboSport2SerialPort</tabstop>
+  <tabstop>comboSport2BaudRate</tabstop>
+  <tabstop>comboSport2Parity</tabstop>
+  <tabstop>comboSport2DataBits</tabstop>
+  <tabstop>comboSport2StopBits</tabstop>
+  <tabstop>comboFirmwarePort</tabstop>
+  <tabstop>chkBoxFirmwareLogTxEchos</tabstop>
+  <tabstop>comboDataConfigPort</tabstop>
+  <tabstop>chkBoxDataConfigLogTxEchos</tabstop>
  </tabstops>
  <resources/>
  <connections>
@@ -157,12 +345,12 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>257</x>
-     <y>765</y>
+     <x>174</x>
+     <y>423</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
-     <y>274</y>
+     <y>247</y>
     </hint>
    </hints>
   </connection>
@@ -173,12 +361,12 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>325</x>
-     <y>765</y>
+     <x>174</x>
+     <y>423</y>
     </hint>
     <hint type="destinationlabel">
-     <x>286</x>
-     <y>274</y>
+     <x>187</x>
+     <y>247</y>
     </hint>
    </hints>
   </connection>

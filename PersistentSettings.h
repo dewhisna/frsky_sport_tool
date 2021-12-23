@@ -31,6 +31,7 @@
 
 enum SPORT_ID_ENUM {				// DO NOT CHANGE ORDER
 	SPIDE_SPORT1 = 0,
+	SPIDE_SPORT2 = 1,
 	// ----
 	SPIDE_COUNT
 };
@@ -73,6 +74,16 @@ public:
 
 	QString getLogFileLastPath() const { return m_strLogFileLastPath; }
 
+	// ----
+
+	SPORT_ID_ENUM getFirmwareSportPort() const { return m_nFirmwareSportPort; }
+	bool getFirmwareLogTxEchos() const { return m_bFirmwareLogTxEchos; }
+	// ----
+	SPORT_ID_ENUM getDataConfigSportPort() const { return m_nDataConfigSportPort; }
+	bool getDataConfigLogTxEchos() const { return m_bDataConfigLogTxEchos; }
+
+	// ----
+
 	// --------------------------------
 
 public slots:
@@ -85,6 +96,16 @@ public slots:
 	// ----
 
 	void setLogFileLastPath(const QString &strLastPath) { m_strLogFileLastPath = strLastPath; }
+
+	// ----
+
+	void setFirmwareSportPort(SPORT_ID_ENUM nPort) { m_nFirmwareSportPort = nPort; }
+	void setFirmwareLogTxEchos(bool bLogEchos) { m_bFirmwareLogTxEchos = bLogEchos; }
+	// ----
+	void setDataConfigSportPort(SPORT_ID_ENUM nPort) { m_nDataConfigSportPort = nPort; }
+	void setDataConfigLogTxEchos(bool bLogEchos) { m_bDataConfigLogTxEchos = bLogEchos; }
+
+	// ----
 
 	// --------------------------------
 
@@ -99,6 +120,15 @@ protected:
 	// LogFile Settings:
 	// -----------------
 	QString m_strLogFileLastPath;
+	// ----
+
+	// Comm Settings:
+	// --------------
+	SPORT_ID_ENUM m_nFirmwareSportPort;
+	bool m_bFirmwareLogTxEchos;
+	// ----
+	SPORT_ID_ENUM m_nDataConfigSportPort;
+	bool m_bDataConfigLogTxEchos;
 	// ----
 
 private:

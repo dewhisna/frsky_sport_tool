@@ -45,9 +45,11 @@ public:
 
 protected slots:
 	void en_selectSport1SerialPort(int nIndex);
+	void en_selectSport2SerialPort(int nIndex);
 
 private:
 	QSerialPortInfo m_selectedSport1SerialPort;
+	QSerialPortInfo m_selectedSport2SerialPort;
 
 	Ui::CConfigDlg *ui;
 };
