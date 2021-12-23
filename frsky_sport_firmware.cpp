@@ -29,14 +29,15 @@
 namespace {
 	constexpr uint8_t PRIM_REQ_FLASHMODE =	0x00;		// Request enter firmware flash mode
 	constexpr uint8_t PRIM_REQ_VERSION =	0x01;		// Request version check
-	constexpr uint8_t PRIM_CMD_DOWNLOAD =	0x03;		// Command firmware download (is 0x02 for upload?)
+	constexpr uint8_t PRIM_CMD_UPLOAD =		0x02;		// Command firmware upload ?? (not sure if this is legit or not -- we will experiment to find out)
+	constexpr uint8_t PRIM_CMD_DOWNLOAD =	0x03;		// Command firmware download
 	constexpr uint8_t PRIM_DATA_WORD =		0x04;		// Data Word Xfer
 	constexpr uint8_t PRIM_DATA_EOF =		0x05;		// Data End-of-File
 
 	constexpr uint8_t PRIM_ACK_FLASHMODE =	0x80;		// Confirm enter flash mode
 	constexpr uint8_t PRIM_ACK_VERSION =	0x81;		// Version check response
-	constexpr uint8_t PRIM_REQ_DATA_ADDR =	0x82;		// Request for specific data address
-	constexpr uint8_t PRIM_END_DOWNLOAD =	0x83;		// End of download
+	constexpr uint8_t PRIM_REQ_DATA_ADDR =	0x82;		// Request for specific data address (and data for upload?)
+	constexpr uint8_t PRIM_END_DOWNLOAD =	0x83;		// End of download (and upload?)
 	constexpr uint8_t PRIM_DATA_CRC_ERR =	0x84;		// CRC Error
 
 	PACK(struct FrSkyFirmwareInformation {
@@ -123,8 +124,6 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 			case SPORT_VERSION_ACK:
 				assert(bIsWaitState);			// This should never be a retry
 				if (m_pUICallback) {
-					m_pUICallback->enableCancel(false);		// Once we start programming, don't let user break things by interrupting us
-
 					// Display Version Information to user and
 					//	prompt for continuation:
 					QString strPrompt;
@@ -161,14 +160,24 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 					} else if (m_runmode == FSM_RM_DEVICE_ID) {
 						m_pUICallback->promptUser(CUICallback::PT_INFORMATION, strPrompt,
 											CUICallback::Ok, CUICallback::NoButton);
-						m_state = SPORT_COMPLETE;
-						m_nextState = SPORT_COMPLETE;
-						QTimer::singleShot(10, this, SLOT(nextState()));	// 10ms delay then transition to complete
 					}
 				}
 
-				m_state = SPORT_CMD_DOWNLOAD;
-				m_nextState = SPORT_CMD_DOWNLOAD;
+				switch (m_runmode) {
+					case FSM_RM_DEVICE_ID:
+						m_state = SPORT_COMPLETE;			// Done if we are only doing ID
+						m_nextState = SPORT_COMPLETE;
+						break;
+					case FSM_RM_FLASH_PROGRAM:
+						m_state = SPORT_CMD_DOWNLOAD;		// Start Download if we are programming
+						m_nextState = SPORT_CMD_DOWNLOAD;
+						break;
+					case FSM_RM_FLASH_READ:
+						m_state = SPORT_CMD_UPLOAD;			// Start Upload if we are reading
+						m_nextState = SPORT_CMD_UPLOAD;
+						break;
+				}
+
 				QTimer::singleShot(200, this, SLOT(nextState()));	// 200ms delay then command download
 				break;
 
@@ -182,8 +191,27 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 
 			case SPORT_CMD_DOWNLOAD:
 				assert(bIsWaitState);			// This should never be a retry since we are only sending it once.  A retry will trigger an error already
+				if (m_pUICallback) {
+					m_pUICallback->enableCancel(false);		// Once we start programming, don't let user break things by interrupting us
+
+					// Switch to deterministic mode:
+					m_pUICallback->setProgressRange(0, (m_nFirmwareSize/FIRMWARE_BLOCK_SIZE) +
+													((m_nFirmwareSize % FIRMWARE_BLOCK_SIZE) ?  1 : 0));
+					m_pUICallback->setProgressPos(0);
+				}
 				waitState(SPORT_DATA_REQ, 2000, 1);		// Send only once, waiting up to 2sec
 				sendFrame(CSportFirmwarePacket(PRIM_CMD_DOWNLOAD));
+				break;
+
+			case SPORT_CMD_UPLOAD:
+				assert(bIsWaitState);			// This should never be a retry since we are only sending it once.  A retry will trigger an error already
+				// Note: Leave cancel enabled here, since halting an
+				//	upload shouldn't break the device (assuming the
+				//	device actually supports upload).  Also, upload
+				//	mode is completely experimental and we may need
+				//	to abort if something goes wrong.
+				waitState(SPORT_DATA_REQ, 2000, 1);		// Send only once, waiting up to 2sec
+				sendFrame(CSportFirmwarePacket(PRIM_CMD_UPLOAD, m_nReqAddress));		// Should this include the address or not??
 				break;
 
 			case SPORT_DATA_REQ:
@@ -243,7 +271,8 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 				//	at least log cases where Minnie and Mickey end up in divorce court...
 				//	[because Minnie's F'ing Goofy]
 				//
-				assert(!m_pFirmware.isNull());	// TODO : If we ever figure out how to implement firmware reading from the device, this logic needs to change in regard to m_pFirmware.  Until then, assert
+				assert(!m_pFirmware.isNull());
+				assert(m_runmode == FSM_RM_FLASH_PROGRAM);		// This is the program-only transfer
 				assert(bIsWaitState);			// This should never be a retry
 				if (m_nReqAddress == m_nFileAddress) {		// See if we need to read more data from firmware file
 					if (m_pFirmware->atEnd()) {
@@ -259,10 +288,9 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 						sendFrame(CSportFirmwarePacket(PRIM_DATA_EOF));
 						break;
 					}
-					assert(!m_pFirmware.isNull());
 					int nBlockSize = m_pFirmware->read((char*)arrFirmwareBlock, sizeof(arrFirmwareBlock));
 					if (nBlockSize < 0) {
-						m_strLastError = tr("Error reading file");
+						m_strLastError = tr("Error reading firmware file");
 						m_state = SPORT_FAIL;
 						emit flashComplete(false);
 						return;
@@ -278,6 +306,27 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 				waitState(SPORT_DATA_REQ, 2000, 1);		// Send only once, waiting up to 2sec
 				sendFrame(CSportFirmwarePacket(PRIM_DATA_WORD, &arrFirmwareBlock[m_nReqAddress & 0x3FF],
 							m_nReqAddress & 0xFF));
+				break;
+
+			case SPORT_DATA_AVAIL:
+			{
+				assert(!m_pFirmware.isNull());
+				assert(m_runmode == FSM_RM_FLASH_READ);		// This is the read-only transfer
+				assert(bIsWaitState);			// This should never be a retry
+				int nWritten = m_pFirmware->write((char*)m_arrDataRead, sizeof(m_arrDataRead));
+				if (nWritten != sizeof(m_arrDataRead)) {		// Note: this includes negative numbers (like -1) for error states
+					m_strLastError = tr("Error writing firmware file");
+					m_state = SPORT_FAIL;
+					emit flashComplete(false);
+					return;
+				}
+				m_nReqAddress += sizeof(m_arrDataRead);
+				m_nFileAddress += sizeof(m_arrDataRead);
+				m_state = SPORT_DATA_TRANSFER;
+				waitState(SPORT_DATA_AVAIL, 2000, 1);	// Send only once, waiting up to 2sec
+				sendFrame(CSportFirmwarePacket(PRIM_CMD_UPLOAD, m_nReqAddress));		// ??? Do we use PRIM_CMD_UPLOAD here or PRIM_DATA_WORD ???
+				// Add CRC retry logic here so that we aren't as Minnie Mouse as FrSky's download mode?
+			}
 				break;
 
 			case SPORT_COMPLETE:
@@ -339,8 +388,9 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 				break;
 
 			case SPORT_CMD_DOWNLOAD:
+			case SPORT_CMD_UPLOAD:
 			case SPORT_DATA_TRANSFER:
-				m_strLastError = tr("Data refused");
+				m_strLastError = tr("Data transfer refused");
 				break;
 
 			case SPORT_END_TRANSFER:
@@ -363,6 +413,7 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 			case SPORT_VERSION_ACK:
 			case SPORT_USER_ABORT:
 			case SPORT_DATA_REQ:
+			case SPORT_DATA_AVAIL:
 			case SPORT_COMPLETE:
 			case SPORT_FAIL:
 				// We can't be out of retries on states we never
@@ -400,10 +451,25 @@ void CFrskyDeviceFirmwareUpdate::processFrame()
 				break;
 
 			case PRIM_REQ_DATA_ADDR:		// Device requests specific file address from firmware image
-				if ((m_state == SPORT_CMD_DOWNLOAD) ||			// Either intial command download
+				if ((m_state == SPORT_CMD_DOWNLOAD) ||			// Either initial command download
+					(m_state == SPORT_CMD_UPLOAD) ||			//	or initial command upload
 					(m_state == SPORT_DATA_TRANSFER)) {			//	or ongoing data transfer
-					m_nReqAddress = m_rxBuffer.firmwarePacket().dataValue();
-					m_state = SPORT_DATA_REQ;
+					switch (m_runmode) {
+						case FSM_RM_FLASH_PROGRAM:
+							m_nReqAddress = m_rxBuffer.firmwarePacket().dataValue();
+							m_state = SPORT_DATA_REQ;
+							break;
+						case FSM_RM_FLASH_READ:
+							m_arrDataRead[0] = m_rxBuffer.firmwarePacket().m_data[0];
+							m_arrDataRead[1] = m_rxBuffer.firmwarePacket().m_data[1];
+							m_arrDataRead[2] = m_rxBuffer.firmwarePacket().m_data[2];
+							m_arrDataRead[3] = m_rxBuffer.firmwarePacket().m_data[3];
+							m_state = SPORT_DATA_AVAIL;
+							break;
+						default:
+							assert(false);
+							break;
+					}
 					nextState();
 				}
 				break;
@@ -420,7 +486,7 @@ void CFrskyDeviceFirmwareUpdate::processFrame()
 
 			// What about flash erase or write failures?  There seems
 			//	to be no way for the device to notify us of that...
-			//	Unless the "CRC ERR" is really any error...
+			//	Unless the "CRC ERR" is really any error and not CRC-only...
 		}
 	}
 }
@@ -615,12 +681,6 @@ bool CFrskyDeviceFirmwareUpdate::flashDeviceFirmware(QIODevice &firmware, bool b
 		m_nFirmwareSize -= sizeof(FrSkyFirmwareInformation);
 	}
 
-	if (m_pUICallback) {
-		m_pUICallback->setProgressRange(0, (m_nFirmwareSize/FIRMWARE_BLOCK_SIZE) +
-										((m_nFirmwareSize % FIRMWARE_BLOCK_SIZE) ?  1 : 0));
-		m_pUICallback->setProgressPos(0);
-	}
-
 	m_state = SPORT_START;
 	nextState();		// Start programming state-machine
 
@@ -636,5 +696,39 @@ bool CFrskyDeviceFirmwareUpdate::flashDeviceFirmware(QIODevice &firmware, bool b
 	return true;
 }
 
+bool CFrskyDeviceFirmwareUpdate::readDeviceFirmware(QIODevice &firmware, bool bBlocking)
+{
+	// Reset the the state-machine, in case this function gets
+	//	called again without creating a new object:
+	m_runmode = FSM_RM_FLASH_READ;
+	m_state = SPORT_IDLE;
+	m_nextState = SPORT_START;
+	m_nReqAddress = 0;
+	m_nFileAddress = 0;
+	m_nVersionInfo = 0;
+	m_pFirmware = &firmware;		// Note: we intentionally don't reset/clear device stream -- we'll only append to the end, or overwrite if that's how it was opened, it's up to the caller
+	m_nFirmwareSize = 0;
+	m_strLastError.clear();
+
+	if (!firmware.isOpen() || !firmware.isWritable()) {
+		m_strLastError = tr("Firmware file not open and writable");
+		emit flashComplete(false);
+		return false;
+	}
+
+	m_state = SPORT_START;
+	nextState();		// Start reading state-machine
+
+	if (bBlocking) {
+		while ((m_state != SPORT_COMPLETE) &&
+			   (m_state != SPORT_FAIL)) {
+			QCoreApplication::processEvents();
+			QCoreApplication::sendPostedEvents();
+		}
+		return (m_state == SPORT_COMPLETE);
+	}
+
+	return true;
+}
 
 // ============================================================================

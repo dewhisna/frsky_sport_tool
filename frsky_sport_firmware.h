@@ -51,8 +51,10 @@ protected:
 		SPORT_VERSION_ACK,			// Have received Version ACK from device
 		SPORT_USER_ABORT,			// User aborted device search or version request
 		SPORT_CMD_DOWNLOAD,			// Send Command Download to device
-		SPORT_DATA_REQ,				// Have received Data Req from device
-		SPORT_DATA_TRANSFER,		// Send Data Transfer to device
+		SPORT_CMD_UPLOAD,			// Send Command Upload to device
+		SPORT_DATA_REQ,				// Have received Data Req from device (programming-only)
+		SPORT_DATA_AVAIL,			// Have received Data Avail from device (reading-only)
+		SPORT_DATA_TRANSFER,		// Send Data Transfer to/from device
 		SPORT_END_TRANSFER,			// End of transfer, no more packets to send, signaling device we're done (end of firmware file)
 		SPORT_CRC_FAILURE,			// Device reported CRC Failure
 		SPORT_COMPLETE,				// Final State for programming successful, if device accepts the end of transfer
@@ -81,8 +83,8 @@ public:
 	//					is also emitted even on blocking mode (for consistency).
 	bool idDevice(bool bBlocking);
 
-	// Main: flashDeviceFirmware function:  Executes FSM_RM_FLASH_PROGRAM sequence
-	//		firmware = QIODevice to filestream of firmware file content
+	// flashDeviceFirmware function:  Executes FSM_RM_FLASH_PROGRAM sequence (main sequence for doing updates)
+	//		firmware = QIODevice of filestream to read firmware file content
 	//		bIsFRSKFile = If true, this is a ".frsk" file with the "frsk"
 	//					file header that we need to skip.  If false, it's
 	//					a "frk" that has no header.
@@ -96,7 +98,20 @@ public:
 	//					is also emitted even on blocking mode (for consistency).
 	bool flashDeviceFirmware(QIODevice &firmware, bool bIsFRSKFile, bool bBlocking);
 
+	// readDeviceFirmware function:  Executes FSM_RM_FLASH_READ sequence (experimental!)
+	//		firmware = QIODevice of filestream to write firmware file content
+	//		bBlocking : If true, this function won't return until reading
+	//					is complete and will return completion status bool.
+	//					Else, if non-blocking, will return immediately with
+	//					'true' and will emit a flashComplete signal with
+	//					the status.  Note: if there's an immediate error in
+	//					non-blocking mode, the return value will be 'false'
+	//					in addition to emitting the signal.  And, the signal
+	//					is also emitted even on blocking mode (for consistency).
+	bool readDeviceFirmware(QIODevice &firmware, bool bBlocking);
+
 	QString getLastError() const { return m_strLastError; }
+	uint32_t getVersionInfo() const { return m_nVersionInfo; }
 
 signals:
 	void flashComplete(bool bSuccess);		// bSuccess True if completed successfully, else getLastError will have error message
@@ -126,7 +141,8 @@ protected:
 	State m_state = SPORT_IDLE;				// Current StateMachine state
 	State m_nextState = SPORT_START;		// Next State Expected by StateMachine (initially, the next state expected is the start of flash programming)
 	int m_nRetryCount = 0;					// Number of retries remaining for current state
-	uint32_t m_nReqAddress = 0;				// Address in firmware file being requested by device
+	uint32_t m_nReqAddress = 0;				// Address in firmware file being requested/sent by device
+	uint8_t m_arrDataRead[4];				// Data sent by device during flash read
 	uint32_t m_nFileAddress = 0;			// Address in firmware file being read from file
 	uint32_t m_nVersionInfo = 0;			// Version information read from device
 	QPointer<QIODevice> m_pFirmware;		// Current firmware file
