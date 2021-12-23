@@ -47,6 +47,7 @@ set(frsky_sport_tool_SOURCES
 	MainWindow.cpp
 	PersistentSettings.cpp
 	ConfigDlg.cpp
+	ProgDlg.cpp
 	frsky_sport_io.cpp
 	frsky_sport_firmware.cpp
 	SaveLoadFileDialog.cpp
@@ -60,6 +61,7 @@ set(frsky_sport_tool_HEADERS
 	PersistentSettings.h
 	ConfigDlg.h
 	UICallback.h
+	ProgDlg.h
 	frsky_sport_io.h
 	frsky_sport_firmware.h
 	SaveLoadFileDialog.h

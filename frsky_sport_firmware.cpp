@@ -75,7 +75,13 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 
 			case SPORT_START:
 				assert(bIsWaitState);			// This should never be a retry
-				if (!m_pFirmware.isNull() && m_pFirmware->isOpen() && m_pFirmware->isReadable()) {
+				if (m_pUICallback) {
+					m_pUICallback->setProgressRange(0, 0);	// Non-deterministic mode
+					m_pUICallback->enableCancel(true);		// Let user halt the device finding mode
+				}
+				if ((m_runmode == FSM_RM_DEVICE_ID) ||
+					((m_runmode == FSM_RM_FLASH_PROGRAM) && !m_pFirmware.isNull() && m_pFirmware->isOpen() && m_pFirmware->isReadable()) ||
+					((m_runmode == FSM_RM_FLASH_READ) && !m_pFirmware.isNull() && m_pFirmware->isOpen() && m_pFirmware->isWritable())) {
 					if (m_pUICallback) {
 						m_pUICallback->setProgressText(tr("Finding Device..."));
 					}
@@ -92,7 +98,7 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 
 			case SPORT_FLASHMODE_REQ:			// This starts the flashing logic and is initiated by flashDeviceFirmware()
 				if (bIsWaitState) {
-					waitState(SPORT_FLASHMODE_ACK, 100, 10);		// Send up to 10 times, waiting 100msec each
+					waitState(SPORT_FLASHMODE_ACK, 100, 300);		// Send up to 300 times, waiting 100msec each
 				}
 				sendFrame(CSportFirmwarePacket(PRIM_REQ_FLASHMODE));
 				break;
@@ -117,29 +123,61 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 			case SPORT_VERSION_ACK:
 				assert(bIsWaitState);			// This should never be a retry
 				if (m_pUICallback) {
+					m_pUICallback->enableCancel(false);		// Once we start programming, don't let user break things by interrupting us
+
 					// Display Version Information to user and
 					//	prompt for continuation:
 					QString strPrompt;
-					strPrompt.asprintf("Firmware V%2.2x.%2.2x, Hardware V%2.2x.%2.2x\nContinue with flash programming?",
+					strPrompt.asprintf("Firmware V%2.2x.%2.2x, Hardware V%2.2x.%2.2x",
 										((m_nVersionInfo >> 24) & 0xFF),
 										((m_nVersionInfo >> 16) & 0xFF),
 										((m_nVersionInfo >> 8) & 0xFF),
 										(m_nVersionInfo & 0xFF));
-					int nResp = m_pUICallback->promptUser(CUICallback::PT_QUESTION, strPrompt,
-										CUICallback::Yes | CUICallback::No, CUICallback::NoButton);
-					if (nResp == CUICallback::No) {
-						m_strLastError = tr("User aborted programming");
-						m_state = SPORT_FAIL;
-						emit flashComplete(false);
-						return;
-					}
+					if ((m_runmode == FSM_RM_FLASH_PROGRAM) ||
+						(m_runmode == FSM_RM_FLASH_READ)) {
+						if (m_runmode == FSM_RM_FLASH_PROGRAM) {
+							strPrompt += "\nContinue with flash programming?";
+						} else {
+							strPrompt += "\nContinue with flash reading?";
+						}
+						int nResp = m_pUICallback->promptUser(CUICallback::PT_QUESTION, strPrompt,
+											CUICallback::Yes | CUICallback::No, CUICallback::NoButton);
+						if (nResp == CUICallback::No) {
+							if (m_runmode == FSM_RM_FLASH_PROGRAM) {
+								m_strLastError = tr("User aborted programming");
+							} else {
+								m_strLastError = tr("User aborted reading");
+							}
+							m_state = SPORT_FAIL;
+							emit flashComplete(false);
+							return;
+						}
 
-					m_pUICallback->setProgressText(tr("Programming in progress..."));
+						if (m_runmode == FSM_RM_FLASH_PROGRAM) {
+							m_pUICallback->setProgressText(tr("Programming in progress..."));
+						} else {
+							m_pUICallback->setProgressText(tr("Reading in progress..."));
+						}
+					} else if (m_runmode == FSM_RM_DEVICE_ID) {
+						m_pUICallback->promptUser(CUICallback::PT_INFORMATION, strPrompt,
+											CUICallback::Ok, CUICallback::NoButton);
+						m_state = SPORT_COMPLETE;
+						m_nextState = SPORT_COMPLETE;
+						QTimer::singleShot(10, this, SLOT(nextState()));	// 10ms delay then transition to complete
+					}
 				}
 
 				m_state = SPORT_CMD_DOWNLOAD;
 				m_nextState = SPORT_CMD_DOWNLOAD;
 				QTimer::singleShot(200, this, SLOT(nextState()));	// 200ms delay then command download
+				break;
+
+			case SPORT_USER_ABORT:
+				assert(bIsWaitState);			// This should never be a retry and is a forced condition
+				// Note: This should only ever happen on device search and/or version reading
+				m_strLastError = tr("User aborted device search/version read");
+				m_state = SPORT_FAIL;
+				emit flashComplete(false);
 				break;
 
 			case SPORT_CMD_DOWNLOAD:
@@ -205,6 +243,7 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 				//	at least log cases where Minnie and Mickey end up in divorce court...
 				//	[because Minnie's F'ing Goofy]
 				//
+				assert(!m_pFirmware.isNull());	// TODO : If we ever figure out how to implement firmware reading from the device, this logic needs to change in regard to m_pFirmware.  Until then, assert
 				assert(bIsWaitState);			// This should never be a retry
 				if (m_nReqAddress == m_nFileAddress) {		// See if we need to read more data from firmware file
 					if (m_pFirmware->atEnd()) {
@@ -243,7 +282,7 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 
 			case SPORT_COMPLETE:
 				if (m_pUICallback) {
-					m_pUICallback->setProgressText(tr("Firmware programming complete"));
+					m_pUICallback->setProgressText(tr("Complete"));
 				}
 				m_strLastError.clear();
 				emit flashComplete(true);
@@ -322,6 +361,7 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 			case SPORT_START:
 			case SPORT_FLASHMODE_ACK:
 			case SPORT_VERSION_ACK:
+			case SPORT_USER_ABORT:
 			case SPORT_DATA_REQ:
 			case SPORT_COMPLETE:
 			case SPORT_FAIL:
@@ -420,6 +460,13 @@ void CFrskyDeviceFirmwareUpdate::en_timeout()
 	//	between the processing loop and the timer, so ignore.
 }
 
+void CFrskyDeviceFirmwareUpdate::en_userCancel()
+{
+	m_state = SPORT_USER_ABORT;
+	m_nextState = SPORT_USER_ABORT;
+	nextState();
+}
+
 // ----------------------------------------------------------------------------
 
 // This function gets triggered whenever the serial port
@@ -471,6 +518,9 @@ CFrskyDeviceFirmwareUpdate::CFrskyDeviceFirmwareUpdate(CFrskySportIO &frskySport
 	connect(this, SIGNAL(dataAvailable()), this, SLOT(en_receive()), Qt::QueuedConnection);
 
 	connect(&m_tmrEventTimeout, SIGNAL(timeout()), this, SLOT(en_timeout()), Qt::DirectConnection);
+	if (pUICallback) {
+		pUICallback->hookCancel(this, SLOT(en_userCancel()));
+	}
 }
 
 CFrskyDeviceFirmwareUpdate::~CFrskyDeviceFirmwareUpdate()
@@ -480,18 +530,48 @@ CFrskyDeviceFirmwareUpdate::~CFrskyDeviceFirmwareUpdate()
 
 // ----------------------------------------------------------------------------
 
+bool CFrskyDeviceFirmwareUpdate::idDevice(bool bBlocking)
+{
+	// Reset the the state-machine, in case this function gets
+	//	called again without creating a new object:
+	m_runmode = FSM_RM_DEVICE_ID;
+	m_state = SPORT_IDLE;
+	m_nextState = SPORT_START;
+	m_nReqAddress = 0;
+	m_nFileAddress = 0;
+	m_nVersionInfo = 0;
+	m_pFirmware.clear();
+	m_nFirmwareSize = 0;
+	m_strLastError.clear();
+
+	m_state = SPORT_START;
+	nextState();		// Start device id state-machine
+
+	if (bBlocking) {
+		while ((m_state != SPORT_COMPLETE) &&
+			   (m_state != SPORT_FAIL)) {
+			QCoreApplication::processEvents();
+			QCoreApplication::sendPostedEvents();
+		}
+		return (m_state == SPORT_COMPLETE);
+	}
+
+	return true;
+}
+
 bool CFrskyDeviceFirmwareUpdate::flashDeviceFirmware(QIODevice &firmware, bool bIsFRSKFile, bool bBlocking)
 {
 	// Reset the the state-machine, in case this function gets
 	//	called again without creating a new object:
+	m_runmode = FSM_RM_FLASH_PROGRAM;
 	m_state = SPORT_IDLE;
 	m_nextState = SPORT_START;
 	m_nReqAddress = 0;
 	m_nFileAddress = 0;
 	m_nVersionInfo = 0;
 	m_pFirmware = &firmware;
-
 	m_nFirmwareSize = firmware.size();		// So that this will work with random-access files and serial streams too, read size once, since streams is bytesAvailable, not overall size
+	m_strLastError.clear();
 
 	if (!firmware.isOpen() || !firmware.isReadable()) {
 		m_strLastError = tr("Firmware file not open and readable");

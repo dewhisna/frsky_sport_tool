@@ -29,6 +29,10 @@
   #define UNUSED(x)           ((void)(x)) /* to avoid warnings */
 #endif
 
+#if !defined(_countof)
+#define _countof(x) (sizeof(x)/sizeof(x[0]))
+#endif
+
 #if __GNUC__
   #define PACK( __Declaration__ )      __Declaration__ __attribute__((__packed__))
 #else

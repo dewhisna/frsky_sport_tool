@@ -49,6 +49,7 @@ protected:
 		SPORT_FLASHMODE_ACK,		// Have received FlashMode ACK from device
 		SPORT_VERSION_REQ,			// Send Version request to device
 		SPORT_VERSION_ACK,			// Have received Version ACK from device
+		SPORT_USER_ABORT,			// User aborted device search or version request
 		SPORT_CMD_DOWNLOAD,			// Send Command Download to device
 		SPORT_DATA_REQ,				// Have received Data Req from device
 		SPORT_DATA_TRANSFER,		// Send Data Transfer to device
@@ -58,11 +59,29 @@ protected:
 		SPORT_FAIL					// Final State for programming failed, for any failure
 	};
 
+	// Run Mode:
+	enum RunMode {
+		FSM_RM_DEVICE_ID,			// Device ID (read version info only and exit)
+		FSM_RM_FLASH_PROGRAM,		// Flash Programming
+		FSM_RM_FLASH_READ,			// Flash Read (experimental)
+	};
+
 public:
 	explicit CFrskyDeviceFirmwareUpdate(CFrskySportIO &frskySportIO, CUICallback *pUICallback = nullptr, QObject *pParent = nullptr);
 	virtual ~CFrskyDeviceFirmwareUpdate();
 
-	// Main: flashDeviceFirmware function:
+	// idDevice function:  Executes FSM_RM_DEVICE_ID sequence
+	//		bBlocking : If true, this function won't return until device
+	//					ID is complete and will return completion status bool.
+	//					Else, if non-blocking, will return immediately with
+	//					'true' and will emit a flashComplete signal with
+	//					the status.  Note: if there's an immediate error in
+	//					non-blocking mode, the return value will be 'false'
+	//					in addition to emitting the signal.  And, the signal
+	//					is also emitted even on blocking mode (for consistency).
+	bool idDevice(bool bBlocking);
+
+	// Main: flashDeviceFirmware function:  Executes FSM_RM_FLASH_PROGRAM sequence
 	//		firmware = QIODevice to filestream of firmware file content
 	//		bIsFRSKFile = If true, this is a ".frsk" file with the "frsk"
 	//					file header that we need to skip.  If false, it's
@@ -90,6 +109,8 @@ protected slots:
 	void en_timeout();
 	void en_readyRead();
 	void en_receive();
+	// ----
+	void en_userCancel();
 
 protected slots:
 	void nextState();						// State machine drive logic
@@ -100,6 +121,8 @@ protected:
 	void sendFrame(const CSportFirmwarePacket &packet);	// Transmit frame with specified packet on bus
 
 protected:
+	RunMode m_runmode = FSM_RM_DEVICE_ID;	// FSM RunMode to execute
+	// -----
 	State m_state = SPORT_IDLE;				// Current StateMachine state
 	State m_nextState = SPORT_START;		// Next State Expected by StateMachine (initially, the next state expected is the start of flash programming)
 	int m_nRetryCount = 0;					// Number of retries remaining for current state

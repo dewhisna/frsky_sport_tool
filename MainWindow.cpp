@@ -28,14 +28,14 @@
 #include "ConfigDlg.h"
 #include "SaveLoadFileDialog.h"
 
+#include "frsky_sport_io.h"
+#include "frsky_sport_firmware.h"
+#include "ProgDlg.h"
+
 #include <QMessageBox>
 #include <QTimer>
 
 #include <assert.h>
-
-#ifndef _countof
-#define _countof(x) (sizeof(x)/sizeof(x[0]))
-#endif
 
 // ============================================================================
 
@@ -202,6 +202,13 @@ void CMainWindow::writeLogString(SPORT_ID_ENUM nSport, const QString &strLogStri
 
 void CMainWindow::en_firmwareID()
 {
+	assert(!m_arrpSport[SPIDE_SPORT1].isNull());
+
+	CProgDlg dlgProg(tr("ID Device Firmware"), this);
+	CFrskyDeviceFirmwareUpdate fsm(*m_arrpSport[SPIDE_SPORT1], &dlgProg, this);
+	if (!fsm.idDevice(true)) {
+		QMessageBox::critical(dlgProg.parent(), dlgProg.title(), fsm.getLastError());
+	}
 }
 
 // ============================================================================

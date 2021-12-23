@@ -34,7 +34,8 @@
 #include <QElapsedTimer>
 #include <QTextStream>
 
-#include "frsky_sport_io.h"
+// Forward Declarations
+class CFrskySportIO;
 
 // ============================================================================
 
