@@ -300,6 +300,7 @@ public:
 
 	bool openPort();
 	void closePort();
+	bool isOpen() const { return m_serialPort.isOpen(); }
 
 	QString getLastError() const { return m_strLastError; }
 

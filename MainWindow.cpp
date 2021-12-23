@@ -124,18 +124,28 @@ CMainWindow::~CMainWindow()
 
 void CMainWindow::en_connect(bool bConnect)
 {
-	if (!bConnect) return;
+	for (int i = 0; i < SPIDE_COUNT; ++i) {
+		assert(!m_arrpSport[i].isNull());
+	}
 
-	assert(!m_arrpSport[SPIDE_SPORT1].isNull());
-
-	if (!m_arrpSport[SPIDE_SPORT1]->openPort()) {
-		QMessageBox::critical(this, tr("Connection Error"), m_arrpSport[SPIDE_SPORT1]->getLastError());
-		// Note: Even though the above 'if' will guard against re-entrancy if
-		//	we were to just call setChecked here directly, we must do this on
-		//	a singleShot or else Qt won't propagate the toggled() signal to
-		//	the connections for the other controls to get reenabled:
-		QTimer::singleShot(1, m_pConnectAction, [this](){ m_pConnectAction->setChecked(false); });
+	if (!bConnect) {
+		for (int i = 0; i < SPIDE_COUNT; ++i) {
+			m_arrpSport[i]->closePort();
+		}
 		return;
+	}
+
+	for (int i = 0; i < SPIDE_COUNT; ++i) {
+		if (!CPersistentSettings::instance()->getDeviceSerialPort(static_cast<SPORT_ID_ENUM>(i)).isEmpty() &&
+			!m_arrpSport[i]->openPort()) {
+			QMessageBox::critical(this, tr("Connection Error"), m_arrpSport[i]->getLastError());
+			// Note: Even though the above 'if' will guard against re-entrancy if
+			//	we were to just call setChecked here directly, we must do this on
+			//	a singleShot or else Qt won't propagate the toggled() signal to
+			//	the connections for the other controls to get reenabled:
+			QTimer::singleShot(1, m_pConnectAction, [this](){ m_pConnectAction->setChecked(false); });
+			return;
+		}
 	}
 
 	if (!m_pWriteLogFileAction->isChecked()) {
@@ -202,10 +212,15 @@ void CMainWindow::writeLogString(SPORT_ID_ENUM nSport, const QString &strLogStri
 
 void CMainWindow::en_firmwareID()
 {
-	assert(!m_arrpSport[SPIDE_SPORT1].isNull());
+	assert(!m_arrpSport[CPersistentSettings::instance()->getFirmwareSportPort()].isNull());
+
+	if (!m_arrpSport[CPersistentSettings::instance()->getFirmwareSportPort()]->isOpen()) {
+		QMessageBox::critical(this, windowTitle(), tr("Sport #%1 is not open.  Check configuration!").arg(CPersistentSettings::instance()->getFirmwareSportPort()+1));
+		return;
+	}
 
 	CProgDlg dlgProg(tr("ID Device Firmware"), this);
-	CFrskyDeviceFirmwareUpdate fsm(*m_arrpSport[SPIDE_SPORT1], &dlgProg, this);
+	CFrskyDeviceFirmwareUpdate fsm(*m_arrpSport[CPersistentSettings::instance()->getFirmwareSportPort()], &dlgProg, this);
 	if (!fsm.idDevice(true)) {
 		QMessageBox::critical(dlgProg.parent(), dlgProg.title(), fsm.getLastError());
 	}

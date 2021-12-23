@@ -127,7 +127,7 @@ bool CFrskySportIO::openPort()
 	closePort();
 
 	if (CPersistentSettings::instance()->getDeviceSerialPort(m_nSportID).isEmpty()) {
-		m_strLastError = tr("S.port #%1 not selected.  Set configuration first!").arg(m_nSportID+1);
+		m_strLastError = tr("S.port #%1 device not selected.  Set configuration first!").arg(m_nSportID+1);
 		return false;
 	}
 
