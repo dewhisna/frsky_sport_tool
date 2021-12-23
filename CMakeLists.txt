@@ -40,6 +40,13 @@ set(QT_LINK_LIBS
 	Qt${QT_VERSION_MAJOR}::SerialPort
 )
 
+if(WIN32)
+	set(GUI_TYPE WIN32)
+endif()
+if(APPLE)
+	set(GUI_TYPE MACOSX_BUNDLE)
+endif()
+
 # -----------------------------------------------------------------------------
 
 set(frsky_sport_tool_SOURCES
@@ -79,7 +86,7 @@ set(frsky_sport_tool_RESOURCES
 
 # -----------------------------------------------------------------------------
 
-add_executable(frsky_sport_tool
+add_executable(frsky_sport_tool ${GUI_TYPE}
 	${frsky_sport_tool_SOURCES}
 	${frsky_sport_tool_HEADERS}
 	${frsky_sport_tool_FORMS}
