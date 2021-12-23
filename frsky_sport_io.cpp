@@ -69,12 +69,15 @@ void CSportTxBuffer::pushFirmwarePacketWithByteStuffing(const CSportFirmwarePack
 
 // ----------------------------------------------------------------------------
 
-void CSportRxBuffer::pushByte(uint8_t byte)
+QByteArray CSportRxBuffer::pushByte(uint8_t byte)
 {
+	QByteArray baExtraneous;
+
 	if (byte == 0x7E) {			// Is this the start frame marker?
 		// Note: since 0x7E is escaped and stuffed, there's no need
 		//	to verify that we aren't in escapement or that we have data
 		//	since we can only ever receive a 0x7E as the start frame byte
+		baExtraneous = m_baExtraneous;
 		reset();				// If so, reset our buffer for a new frame
 		m_bHaveFrameStart = true;
 	} else if (m_bHaveFrameStart) {
@@ -102,11 +105,12 @@ void CSportRxBuffer::pushByte(uint8_t byte)
 			}
 		}
 	} else {
-		// Note: ignore bytes we receive before a frame start
-		//	but log them so we know we had extraneous bytes:
-
-		// TODO : Log extraneous bytes
+		// Note: ignore bytes we receive before a frame start, but
+		//	keep them for logging so we know we had extraneous bytes:
+		m_baExtraneous.append(byte);
 	}
+
+	return baExtraneous;
 }
 
 

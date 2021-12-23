@@ -240,6 +240,7 @@ public:
 		m_size = 0;
 		m_bInEscape = false;
 		m_bHaveFrameStart = false;
+		m_baExtraneous.clear();
 	}
 
 	bool haveCompletePacket() const { return m_size >= sizeof(CSportFirmwarePacket); }	// Note: all packets are same size, so doesn't matter which sizeof() we use here
@@ -272,7 +273,7 @@ public:
 		return false;
 	}
 
-	void pushByte(uint8_t byte);
+	QByteArray pushByte(uint8_t byte);		// Returns any extraneous discarded bytes from before a valid receive so they can be logged
 
 protected:
 	union {
@@ -283,6 +284,7 @@ protected:
 	uint8_t m_size = 0;
 	bool m_bInEscape = false;			// Set to true when we receive a 0x7D stuff byte
 	bool m_bHaveFrameStart = false;		// Set to true when we receive a 0x7E start byte, used so we don't capture incomplete frame before frame start
+	QByteArray m_baExtraneous;			// Extraneous received bytes
 };
 
 
