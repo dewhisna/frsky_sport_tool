@@ -177,6 +177,31 @@ void CFrskySportIO::closePort()
 
 // ----------------------------------------------------------------------------
 
+void CFrskySportIO::logMessage(LOG_TYPE nLT, const QByteArray &baMsg, const QString &strExtraMsg)
+{
+	QString strLogMsg;
+
+	switch (nLT) {
+		case LT_RX:
+			strLogMsg += "Recv: ";
+			break;
+		case LT_TX:
+			strLogMsg += "Send: ";
+			break;
+		case LT_TXECHO:
+			strLogMsg += "Echo: ";
+			break;
+	}
+
+	for (int i = 0; i < baMsg.size(); ++i) {
+		if (i) strLogMsg += QChar('.');
+		strLogMsg += QString("%1").arg((uint8_t)(baMsg.at(i)), 2, 16, QChar('0')).toUpper();
+	}
+
+	if (!strExtraMsg.isEmpty()) strLogMsg += "  " + strExtraMsg;
+
+	emit writeLogString(m_nSportID, strLogMsg);
+}
 
 // ============================================================================
 

@@ -292,6 +292,12 @@ class CFrskySportIO : public QObject
 {
 	Q_OBJECT
 public:
+	enum LOG_TYPE {
+		LT_RX = 0,			// Received Message Log
+		LT_TX = 1,			// Transmit Message Log
+		LT_TXECHO = 2,		// Transmit Echo Message Log
+	};
+
 	CFrskySportIO(SPORT_ID_ENUM nSport, QObject *pParent = nullptr);
 	virtual ~CFrskySportIO();
 
@@ -303,6 +309,8 @@ public:
 	bool isOpen() const { return m_serialPort.isOpen(); }
 
 	QString getLastError() const { return m_strLastError; }
+
+	void logMessage(LOG_TYPE nLT, const QByteArray &baMsg, const QString &strExtraMsg = QString());
 
 signals:
 	void writeLogString(SPORT_ID_ENUM nSport, const QString &strLogString);
