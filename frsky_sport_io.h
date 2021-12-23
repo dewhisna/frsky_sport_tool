@@ -143,6 +143,7 @@ PACK(union CSportTelemetryPacket
 		m_dataId = nDataID;
 		m_value = nValue;
 	}
+	uint8_t crc() const;
 	struct {
 		uint8_t m_physicalId;		// Device Physical ID (with included 3-bit CRC)
 		uint8_t m_primId;			// Communications Primitive
@@ -184,6 +185,7 @@ PACK(union CSportFirmwarePacket
 				(m_data[2] << 16) +
 				(m_data[3] << 24));
 	}
+	uint8_t crc() const;
 	struct {
 		uint8_t m_physicalId;		// Device Physical ID (with included 3-bit CRC)
 		uint8_t m_primId;			// Communications Primitive
@@ -243,9 +245,14 @@ public:
 		m_baExtraneous.clear();
 	}
 
-	bool haveCompletePacket() const { return m_size >= sizeof(CSportFirmwarePacket); }	// Note: all packets are same size, so doesn't matter which sizeof() we use here
+	bool haveCompletePacket() const { return m_size >= (sizeof(CSportFirmwarePacket)+1); }	// Note: all packets are same size, so doesn't matter which sizeof() we use here.  +1 for CRC
 	uint8_t size() const { return m_size; }
 	const uint8_t *data() const { return m_data; }
+	uint8_t crc() const
+	{
+		assert(m_size > sizeof(CSportFirmwarePacket));	// Note: all packets are same size, so doesn't matter which sizeof() we use here.
+		return m_data[sizeof(CSportFirmwarePacket)];
+	}
 	const CSportTelemetryPacket &telemetryPacket() const
 	{
 		assert(m_size >= sizeof(CSportTelemetryPacket));

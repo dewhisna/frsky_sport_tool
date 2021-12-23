@@ -26,6 +26,26 @@
 
 // ============================================================================
 
+uint8_t CSportTelemetryPacket::crc() const
+{
+	uint16_t crc = 0;
+	for (size_t i=1; i<sizeof(m_raw); ++i) {	// no CRC on 1st byte (physicalId)
+		uint8_t byte = m_raw[i];
+		crc += byte; // 0-1FF
+		crc += crc >> 8; // 0-100
+		crc &= 0x00ff;
+	}
+	return (0xFF - crc);
+}
+
+uint8_t CSportFirmwarePacket::crc() const
+{
+	// Yes, they are only sending the low-byte of the 16-bit CRC
+	return crc16(CRC_1021, &m_raw[1], sizeof(m_raw)-1);		// no CRC on 1st byte (physicalId)
+}
+
+// ============================================================================
+
 void CSportTxBuffer::pushByte(uint8_t byte)
 {
 	m_data.append(byte);
@@ -44,27 +64,21 @@ void CSportTxBuffer::pushByteWithByteStuffing(uint8_t byte)
 void CSportTxBuffer::pushTelemetryPacketWithByteStuffing(const CSportTelemetryPacket & packet)
 {
 	reset();
-	uint16_t crc = 0;
-	pushByte(packet.m_physicalId);		// no bytestuffing, no CRC
+	pushByte(packet.m_physicalId);		// no bytestuffing
 	for (size_t i=1; i<sizeof(CSportTelemetryPacket); ++i) {
-		uint8_t byte = packet.m_raw[i];
-		pushByteWithByteStuffing(byte);
-		crc += byte; // 0-1FF
-		crc += crc >> 8; // 0-100
-		crc &= 0x00ff;
+		pushByteWithByteStuffing(packet.m_raw[i]);
 	}
-	pushByteWithByteStuffing(0xFF - crc);
+	pushByteWithByteStuffing(packet.crc());
 }
 
 void CSportTxBuffer::pushFirmwarePacketWithByteStuffing(const CSportFirmwarePacket & packet)
 {
 	reset();
-	pushByte(packet.m_physicalId);		// no bytestuffing, no CRC
-	uint16_t nCRC = crc16(CRC_1021, &packet.m_raw[1], sizeof(packet.m_raw)-1);
+	pushByte(packet.m_physicalId);		// no bytestuffing
 	for (size_t i=1; i<sizeof(CSportFirmwarePacket); ++i) {
 		pushByteWithByteStuffing(packet.m_raw[i]);
 	}
-	pushByteWithByteStuffing(nCRC);		// Yes, they are only sending the low-byte of the 16-bit CRC
+	pushByteWithByteStuffing(packet.crc());
 }
 
 // ----------------------------------------------------------------------------
