@@ -206,7 +206,7 @@ void CMainWindow::writeLogString(SPORT_ID_ENUM nSport, const QString &strLogStri
 	if (!m_pLogFile.isNull() && m_pLogFile->device()->isOpen() && m_pLogFile->device()->isWritable()) {
 		QStringList lstLogData;
 		double nElapsedTime = static_cast<double>(m_timerLogFile.nsecsElapsed())/1000000.0;
-		(*m_pLogFile) << QString("%1").arg(nElapsedTime, 0, 'f', 4) << ": " << QString::number(nSport) << ": " << strLogString << Qt::endl;
+		(*m_pLogFile) << QString("%1").arg(nElapsedTime, 0, 'f', 4) << ": " << QString::number(nSport+1) << ": " << strLogString << Qt::endl;
 	}
 }
 
