@@ -507,11 +507,10 @@ void CFrskyDeviceFirmwareUpdate::sendFrame(const CSportFirmwarePacket &packet)
 	CSportTxBuffer frameReqFlashMode;
 	frameReqFlashMode.pushFirmwarePacketWithByteStuffing(packet);
 
-	// TODO:  Add logging of Tx packet
-
 	QByteArray arrBytes;
 	arrBytes.append(0x7E);			// Start of Frame
 	arrBytes.append(frameReqFlashMode.data());
+	m_frskySportIO.logMessage(CFrskySportIO::LT_TX, arrBytes);
 	m_frskySportIO.port().write(arrBytes);
 	m_frskySportIO.port().flush();
 }
@@ -557,12 +556,33 @@ void CFrskyDeviceFirmwareUpdate::en_receive()
 	QByteArray arrBytes = m_frskySportIO.port().readAll();
 	if (!arrBytes.isEmpty()) {
 		for (int ndx = 0; ndx < arrBytes.size(); ++ndx) {
-			m_rxBuffer.pushByte(arrBytes.at(ndx));
+			QByteArray baExtraneous = m_rxBuffer.pushByte(arrBytes.at(ndx));
+			if (!baExtraneous.isEmpty()) {
+				m_frskySportIO.logMessage(CFrskySportIO::LT_RX, baExtraneous, "*** Extraneous Bytes");
+			}
 			if (m_rxBuffer.haveCompletePacket()) {
+				if (!m_rxBuffer.isFirmwarePacket() && !m_rxBuffer.isTelemetryPacket()) {
+					QByteArray baUnexpected((char*)m_rxBuffer.data(), m_rxBuffer.size());
+					m_frskySportIO.logMessage(CFrskySportIO::LT_RX, baUnexpected, "*** Unexpected/Unknown packet");
+				} else {
+					uint8_t nExpectedCRC = m_rxBuffer.isFirmwarePacket() ? m_rxBuffer.firmwarePacket().crc() :
+															m_rxBuffer.telemetryPacket().crc();
 
-				// TODO : Log Receive Packet and check CRC for logging
-				//	purposes, but even the official FrSky tool doesn't
-				//	actually check the CRC, so we'll ignore errors...
+					bool bIsEcho = m_rxBuffer.isFirmwarePacket() && (m_rxBuffer.firmwarePacket().m_physicalId == PHYS_ID_FIRMCMD);
+					if (CPersistentSettings::instance()->getFirmwareLogTxEchos() ||
+						(!CPersistentSettings::instance()->getFirmwareLogTxEchos() && !bIsEcho)) {
+						QByteArray baMessage(1, 0x7E);		// Add the 0x7E since it's eaten by the RxBuffer
+						baMessage.append((char*)m_rxBuffer.data(), m_rxBuffer.size());
+						if (nExpectedCRC != m_rxBuffer.crc()) {
+							QString strCRCError = QString("*** Expected CRC of 0x%1, Received CRC of 0x%2")
+										.arg(QString("%1").arg(nExpectedCRC, 2, 16, QChar('0')).toUpper(),
+											QString("%1").arg(m_rxBuffer.crc(), 2, 16, QChar('0')).toUpper());
+							m_frskySportIO.logMessage(bIsEcho ? CFrskySportIO::LT_TXECHO : CFrskySportIO::LT_RX, baMessage, strCRCError);
+						} else {
+							m_frskySportIO.logMessage(bIsEcho ? CFrskySportIO::LT_TXECHO : CFrskySportIO::LT_RX, baMessage);
+						}
+					}
+				}
 
 				if (m_rxBuffer.isFirmwarePacket()) processFrame();		// Process only firmware packets
 				m_rxBuffer.reset();
