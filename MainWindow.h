@@ -60,6 +60,8 @@ protected slots:
 	void en_writeLogFile(bool bOpen);
 	// ----
 	void en_firmwareID();
+	void en_firmwareProgram();
+	void en_firmwareRead();
 
 protected:
 	QFile m_fileLogFile;
@@ -73,6 +75,8 @@ private:
 	QPointer<QAction> m_pConfigureAction;
 	QPointer<QAction> m_pWriteLogFileAction;
 	QPointer<QAction> m_pFirmwareIDAction;
+	QPointer<QAction> m_pFirmwareProgramAction;
+	QPointer<QAction> m_pFirmwareReadAction;
 
 	Ui::CMainWindow *ui;
 };

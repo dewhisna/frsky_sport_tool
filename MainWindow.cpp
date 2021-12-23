@@ -34,6 +34,7 @@
 
 #include <QMessageBox>
 #include <QTimer>
+#include <QFileInfo>
 
 #include <assert.h>
 
@@ -97,6 +98,11 @@ CMainWindow::CMainWindow(QWidget *parent) :
 	m_pFirmwareIDAction = pFirmwareMenu->addAction(tr("&ID Firmware..."), this, SLOT(en_firmwareID()));
 	m_pFirmwareIDAction->setEnabled(m_pConnectAction->isChecked());
 
+	m_pFirmwareProgramAction = pFirmwareMenu->addAction(tr("&Program Firmware to Device..."), this, SLOT(en_firmwareProgram()));
+	m_pFirmwareProgramAction->setEnabled(m_pConnectAction->isChecked());
+
+	m_pFirmwareReadAction = pFirmwareMenu->addAction(tr("&Read Firmware from Device..."), this, SLOT(en_firmwareRead()));
+	m_pFirmwareReadAction->setEnabled(m_pConnectAction->isChecked());
 
 	// --------------------------------
 
@@ -108,6 +114,8 @@ CMainWindow::CMainWindow(QWidget *parent) :
 	connect(m_pConnectAction, &QAction::toggled, this, [this](bool bConnected)->void {
 		m_pConfigureAction->setDisabled(bConnected);
 		m_pFirmwareIDAction->setEnabled(bConnected);
+		m_pFirmwareProgramAction->setEnabled(bConnected);
+		m_pFirmwareReadAction->setEnabled(bConnected);
 	});
 
 	// --------------------------------
@@ -224,6 +232,81 @@ void CMainWindow::en_firmwareID()
 	if (!fsm.idDevice(true)) {
 		QMessageBox::critical(dlgProg.parent(), dlgProg.title(), fsm.getLastError());
 	}
+}
+
+void CMainWindow::en_firmwareProgram()
+{
+	assert(!m_arrpSport[CPersistentSettings::instance()->getFirmwareSportPort()].isNull());
+
+	if (!m_arrpSport[CPersistentSettings::instance()->getFirmwareSportPort()]->isOpen()) {
+		QMessageBox::critical(this, windowTitle(), tr("Sport #%1 is not open.  Check configuration!").arg(CPersistentSettings::instance()->getFirmwareSportPort()+1));
+		return;
+	}
+
+	QString strFilePathName = CSaveLoadFileDialog::getOpenFileName(
+				this,
+				tr("Load Firmware File", "FileFilters"),
+				CPersistentSettings::instance()->getFirmwareLastReadPath(),
+				tr("Frsky Firmware Files (*.frk *.frsk)", "FileFilters"),
+				nullptr,
+				QFileDialog::Options());
+	if (strFilePathName.isEmpty()) return;
+
+	CPersistentSettings::instance()->setFirmwareLastReadPath(strFilePathName);
+
+	QFile fileFirmware(strFilePathName);
+	if (!fileFirmware.open(QIODevice::ReadOnly)) {
+		QMessageBox::warning(this, tr("Opening Firmware File"), tr("Error: Couldn't open Firmware File \"%1\" for reading.").arg(strFilePathName));
+		return;
+	}
+
+	QFileInfo fiFirmware(fileFirmware);
+	bool bIsFrsk = (fiFirmware.suffix().compare("frsk", Qt::CaseInsensitive) == 0);
+
+	CProgDlg dlgProg(tr("Program Firmware"), this);
+	CFrskyDeviceFirmwareUpdate fsm(*m_arrpSport[CPersistentSettings::instance()->getFirmwareSportPort()], &dlgProg, this);
+	if (!fsm.flashDeviceFirmware(fileFirmware, bIsFrsk, true)) {
+		QMessageBox::critical(dlgProg.parent(), dlgProg.title(), fsm.getLastError());
+	}
+
+	fileFirmware.close();
+}
+
+void CMainWindow::en_firmwareRead()
+{
+	assert(!m_arrpSport[CPersistentSettings::instance()->getFirmwareSportPort()].isNull());
+
+	QMessageBox::warning(this, "Read Firmware", "WARNING: This function is experimental and exploits undocumented Frsky Protocol details and may destroy the Frsky Device!  Proceed with caution...");
+
+	if (!m_arrpSport[CPersistentSettings::instance()->getFirmwareSportPort()]->isOpen()) {
+		QMessageBox::critical(this, windowTitle(), tr("Sport #%1 is not open.  Check configuration!").arg(CPersistentSettings::instance()->getFirmwareSportPort()+1));
+		return;
+	}
+
+	QString strFilePathName = CSaveLoadFileDialog::getSaveFileName(
+				this,
+				tr("Save Firmware File", "FileFilters"),
+				CPersistentSettings::instance()->getLogFileLastPath(),
+				tr("Frsky Firmware Files (*.frk)", "FileFilters"),
+				"frk",
+				nullptr,
+				QFileDialog::Options());
+	if (strFilePathName.isEmpty()) return;
+	CPersistentSettings::instance()->setFirmwareLastWritePath(strFilePathName);
+
+	QFile fileFirmware(strFilePathName);
+	if (!fileFirmware.open(QIODevice::WriteOnly)) {
+		QMessageBox::warning(this, tr("Opening Firmware File"), tr("Error: Couldn't open Firmware File \"%1\" for writing.").arg(strFilePathName));
+		return;
+	}
+
+	CProgDlg dlgProg(tr("Read Firmware"), this);
+	CFrskyDeviceFirmwareUpdate fsm(*m_arrpSport[CPersistentSettings::instance()->getFirmwareSportPort()], &dlgProg, this);
+	if (!fsm.readDeviceFirmware(fileFirmware, true)) {
+		QMessageBox::critical(dlgProg.parent(), dlgProg.title(), fsm.getLastError());
+	}
+
+	fileFirmware.close();
 }
 
 // ============================================================================
