@@ -140,7 +140,7 @@ CFrskySportIO::~CFrskySportIO()
 {
 }
 
-bool CFrskySportIO::openPort(const QString &strSerialPort)
+bool CFrskySportIO::openPort(const QString &strSerialPort, int nBaudRate, int nDataBits, char chParity, int nStopBits)
 {
 	closePort();
 
@@ -153,9 +153,10 @@ bool CFrskySportIO::openPort(const QString &strSerialPort)
 	}
 
 	m_serialPort.setPortName(strPortName);
-	m_serialPort.setBaudRate(CPersistentSettings::instance()->getDeviceBaudRate(m_nSportID));
+	if (nBaudRate == 0) nBaudRate = CPersistentSettings::instance()->getDeviceBaudRate(m_nSportID);
+	m_serialPort.setBaudRate(nBaudRate);
 	m_serialPort.setFlowControl(QSerialPort::NoFlowControl);
-	char chParity = CPersistentSettings::instance()->getDeviceParity(m_nSportID);
+	if (chParity == 0) chParity = CPersistentSettings::instance()->getDeviceParity(m_nSportID);
 	switch (chParity) {
 		case 'N':
 		case 'n':
@@ -169,9 +170,21 @@ bool CFrskySportIO::openPort(const QString &strSerialPort)
 		case 'e':
 			m_serialPort.setParity(QSerialPort::EvenParity);
 			break;
+		case 'S':
+		case 's':
+			m_serialPort.setParity(QSerialPort::SpaceParity);
+			break;
+		case 'M':
+		case 'm':
+			m_serialPort.setParity(QSerialPort::MarkParity);
+			break;
+		default:
+			m_strLastError = tr("Invalid Parity Setting");
+			return false;
 	}
-	m_serialPort.setDataBits(static_cast<QSerialPort::DataBits>(CPersistentSettings::instance()->getDeviceDataBits(m_nSportID)));
-	int nStopBits = CPersistentSettings::instance()->getDeviceStopBits(m_nSportID);
+	if (nDataBits == 0) nDataBits = CPersistentSettings::instance()->getDeviceDataBits(m_nSportID);
+	m_serialPort.setDataBits(static_cast<QSerialPort::DataBits>(nDataBits));
+	if (nStopBits == 0) nStopBits = CPersistentSettings::instance()->getDeviceStopBits(m_nSportID);
 	switch (nStopBits) {
 		case 1:
 			m_serialPort.setStopBits(QSerialPort::OneStop);
@@ -179,6 +192,14 @@ bool CFrskySportIO::openPort(const QString &strSerialPort)
 		case 2:
 			m_serialPort.setStopBits(QSerialPort::TwoStop);
 			break;
+#ifdef Q_OS_WINDOWS		// as per Qt docs, this one is only supported on Windows
+		case 3:
+			m_serialPort.setStopBits(QSerialPort::OneAndHalfStop);
+			break;
+#endif
+		default:
+			m_strLastError = tr("Invalid StopBit Setting");
+			return false;
 	}
 
 	if (!m_serialPort.open(QIODevice::ReadWrite)) {
