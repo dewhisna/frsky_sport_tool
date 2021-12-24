@@ -21,6 +21,7 @@
 ****************************************************************************/
 
 #include "frsky_sport_firmware.h"
+#include "UICallback.h"
 
 #include <QCoreApplication>
 

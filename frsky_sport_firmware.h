@@ -25,7 +25,6 @@
 
 #include "defs.h"
 #include "frsky_sport_io.h"
-#include "UICallback.h"
 
 #include <QObject>
 #include <QString>
@@ -33,6 +32,9 @@
 #include <QIODevice>
 #include <QTimer>
 #include <QElapsedTimer>
+
+// Forward Declarations
+class CUICallback;
 
 // ============================================================================
 
