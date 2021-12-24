@@ -146,7 +146,7 @@ void CMainWindow::en_connect(bool bConnect)
 	for (int i = 0; i < SPIDE_COUNT; ++i) {
 		if (!CPersistentSettings::instance()->getDeviceSerialPort(static_cast<SPORT_ID_ENUM>(i)).isEmpty() &&
 			!m_arrpSport[i]->openPort()) {
-			QMessageBox::critical(this, tr("Connection Error"), m_arrpSport[i]->getLastError());
+			QMessageBox::critical(this, tr("Connection Error"), tr("Opening Sport #%1").arg(i+1) + "\n" + m_arrpSport[i]->getLastError());
 			// Note: Even though the above 'if' will guard against re-entrancy if
 			//	we were to just call setChecked here directly, we must do this on
 			//	a singleShot or else Qt won't propagate the toggled() signal to
