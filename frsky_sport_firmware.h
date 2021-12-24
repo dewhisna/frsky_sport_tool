@@ -132,7 +132,7 @@ protected slots:
 	void nextState();						// State machine drive logic
 
 protected:
-	void processFrame();					// Process the current frame in m_rxBuffer
+	bool processFrame();					// Process the current frame in m_rxBuffer
 	void waitState(State nNextState, uint32_t nTimeout, int nRetries);	// wait for specified state for nRetries, with nTimeout time between tries
 	void sendFrame(const CSportFirmwarePacket &packet);	// Transmit frame with specified packet on bus
 

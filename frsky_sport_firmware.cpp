@@ -436,9 +436,10 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 	}
 }
 
-void CFrskyDeviceFirmwareUpdate::processFrame()
+bool CFrskyDeviceFirmwareUpdate::processFrame()
 {
 	assert(m_rxBuffer.haveCompletePacket() && m_rxBuffer.isFirmwarePacket());
+	bool bProcessOK = true;
 
 	if ((m_rxBuffer.firmwarePacket().m_physicalId == PHYS_ID_FIRMRSP) &&
 		(m_rxBuffer.firmwarePacket().m_primId == PRIM_ID_FIRMWARE_FRAME)) {
@@ -492,11 +493,17 @@ void CFrskyDeviceFirmwareUpdate::processFrame()
 				nextState();
 				break;
 
+			default:
+				bProcessOK = false;			// Report that we don't understand the message so it can be logged as unexpected
+				break;
+
 			// What about flash erase or write failures?  There seems
 			//	to be no way for the device to notify us of that...
 			//	Unless the "CRC ERR" is really any error and not CRC-only...
 		}
 	}
+
+	return bProcessOK;
 }
 
 void CFrskyDeviceFirmwareUpdate::waitState(State nNextState, uint32_t nTimeout, int nRetries)
@@ -575,24 +582,31 @@ void CFrskyDeviceFirmwareUpdate::en_receive()
 				} else {
 					uint8_t nExpectedCRC = m_rxBuffer.isFirmwarePacket() ? m_rxBuffer.firmwarePacket().crc() :
 															m_rxBuffer.telemetryPacket().crc();
-
 					bool bIsEcho = m_rxBuffer.isFirmwarePacket() && (m_rxBuffer.firmwarePacket().m_physicalId == PHYS_ID_FIRMCMD);
+
+					bool bProcessOK = true;
+					if (m_rxBuffer.isFirmwarePacket()) bProcessOK = processFrame();		// Process only firmware packets
+
 					if (CPersistentSettings::instance()->getFirmwareLogTxEchos() ||
-						(!CPersistentSettings::instance()->getFirmwareLogTxEchos() && !bIsEcho)) {
+						(!CPersistentSettings::instance()->getFirmwareLogTxEchos() && !bIsEcho) ||
+						!bProcessOK) {
 						QByteArray baMessage(1, 0x7E);		// Add the 0x7E since it's eaten by the RxBuffer
 						baMessage.append((char*)m_rxBuffer.data(), m_rxBuffer.size());
+						QString strExtraMessage;
+						if (!bProcessOK) {
+							strExtraMessage = "*** Unexpected Firmware Message";
+						}
 						if (nExpectedCRC != m_rxBuffer.crc()) {
 							QString strCRCError = QString("*** Expected CRC of 0x%1, Received CRC of 0x%2")
 										.arg(QString("%1").arg(nExpectedCRC, 2, 16, QChar('0')).toUpper(),
 											QString("%1").arg(m_rxBuffer.crc(), 2, 16, QChar('0')).toUpper());
-							m_frskySportIO.logMessage(bIsEcho ? CFrskySportIO::LT_TXECHO : CFrskySportIO::LT_RX, baMessage, strCRCError);
-						} else {
-							m_frskySportIO.logMessage(bIsEcho ? CFrskySportIO::LT_TXECHO : CFrskySportIO::LT_RX, baMessage);
+							if (!strExtraMessage.isEmpty()) strExtraMessage += "  ";
+							strExtraMessage += strCRCError;
 						}
+						m_frskySportIO.logMessage(bIsEcho ? CFrskySportIO::LT_TXECHO : CFrskySportIO::LT_RX, baMessage, strExtraMessage);
 					}
 				}
 
-				if (m_rxBuffer.isFirmwarePacket()) processFrame();		// Process only firmware packets
 				m_rxBuffer.reset();
 			}
 		}
