@@ -140,16 +140,19 @@ CFrskySportIO::~CFrskySportIO()
 {
 }
 
-bool CFrskySportIO::openPort()
+bool CFrskySportIO::openPort(const QString &strSerialPort)
 {
 	closePort();
 
-	if (CPersistentSettings::instance()->getDeviceSerialPort(m_nSportID).isEmpty()) {
+	QString strPortName = strSerialPort;
+	if (strPortName.isEmpty()) strPortName = CPersistentSettings::instance()->getDeviceSerialPort(m_nSportID);
+
+	if (strPortName.isEmpty()) {
 		m_strLastError = tr("S.port #%1 device not selected.  Set configuration first!").arg(m_nSportID+1);
 		return false;
 	}
 
-	m_serialPort.setPortName(CPersistentSettings::instance()->getDeviceSerialPort(m_nSportID));
+	m_serialPort.setPortName(strPortName);
 	m_serialPort.setBaudRate(CPersistentSettings::instance()->getDeviceBaudRate(m_nSportID));
 	m_serialPort.setFlowControl(QSerialPort::NoFlowControl);
 	char chParity = CPersistentSettings::instance()->getDeviceParity(m_nSportID);

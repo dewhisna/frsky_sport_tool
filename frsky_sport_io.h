@@ -313,7 +313,7 @@ public:
 	SPORT_ID_ENUM getSportID() const { return m_nSportID; }
 	QSerialPort &port() { return m_serialPort; }
 
-	bool openPort();
+	bool openPort(const QString &strSerialPort = QString());
 	void closePort();
 	bool isOpen() const { return m_serialPort.isOpen(); }
 
