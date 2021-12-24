@@ -77,18 +77,20 @@ BTN_TYPE CProgDlg::promptUser(PROMPT_TYPE nPromptType,
 					BTN_TYPE nButtons,
 					BTN_TYPE nDefaultButton)
 {
-	switch (nPromptType) {
-		case PT_CRITICAL:
-			return QMessageBox::critical(&m_dlgProgress, m_strTitle, strText, nButtons, nDefaultButton);
+	if (isInteractive()) {
+		switch (nPromptType) {
+			case PT_CRITICAL:
+				return QMessageBox::critical(&m_dlgProgress, m_strTitle, strText, nButtons, nDefaultButton);
 
-		case PT_INFORMATION:
-			return QMessageBox::information(&m_dlgProgress, m_strTitle, strText, nButtons, nDefaultButton);
+			case PT_INFORMATION:
+				return QMessageBox::information(&m_dlgProgress, m_strTitle, strText, nButtons, nDefaultButton);
 
-		case PT_QUESTION:
-			return QMessageBox::question(&m_dlgProgress, m_strTitle, strText, nButtons, nDefaultButton);
+			case PT_QUESTION:
+				return QMessageBox::question(&m_dlgProgress, m_strTitle, strText, nButtons, nDefaultButton);
 
-		case PT_WARNING:
-			return QMessageBox::warning(&m_dlgProgress, m_strTitle, strText, nButtons, nDefaultButton);
+			case PT_WARNING:
+				return QMessageBox::warning(&m_dlgProgress, m_strTitle, strText, nButtons, nDefaultButton);
+		}
 	}
 
 	return nDefaultButton;

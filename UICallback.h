@@ -85,6 +85,15 @@ public:
 	// ----
 	virtual void setRxDataStatusLED(bool bStatus) = 0;		// Rx Data Status LED, On/Off or Color change
 	virtual void setTxDataStatusLED(bool bStatus) = 0;		// Tx Data Status LED, On/Off or Color change
+	// ----
+	virtual void setInteractive(bool bInteractive)			// Enables/Disables prompts (while leaving progress in place)
+	{
+		m_bInteractive = bInteractive;
+	}
+	virtual bool isInteractive() const { return m_bInteractive; }
+
+protected:
+	bool m_bInteractive = true;
 };
 
 // ============================================================================

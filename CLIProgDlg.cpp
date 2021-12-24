@@ -99,6 +99,8 @@ BTN_TYPE CCLIProgDlg::promptUser(PROMPT_TYPE nPromptType,
 					BTN_TYPE nButtons,
 					BTN_TYPE nDefaultButton)
 {
+	if (!isInteractive()) return nDefaultButton;
+
 	QString strPromptType;
 	switch (nPromptType) {
 		case PT_CRITICAL:
