@@ -31,7 +31,6 @@
 #include <QPointer>
 #include <QIODevice>
 #include <QTimer>
-#include <QElapsedTimer>
 
 // Forward Declarations
 class CUICallback;
@@ -151,7 +150,6 @@ protected:
 	qint64 m_nFirmwareSize = 0;				// Size of firmware, used for size checking and for progress callbacks
 	CSportRxBuffer m_rxBuffer;				// Receive Sport Packet buffer from serial en_receive events
 	QTimer m_tmrEventTimeout;				// Current Event Timeout Timer, triggers for doing retries and state machine driving
-	QElapsedTimer m_tmrLogFile;				// Log File event timer
 
 	QString m_strLastError;					// Last error to report
 	CFrskySportIO &m_frskySportIO;			// Serial Port handler for Sport I/O
