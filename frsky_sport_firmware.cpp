@@ -132,24 +132,29 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 										((m_nVersionInfo >> 16) & 0xFF),
 										((m_nVersionInfo >> 8) & 0xFF),
 										(m_nVersionInfo & 0xFF));
+					if (!m_pUICallback->isInteractive()) {
+						m_pUICallback->setProgressText(strPrompt);
+					}
 					if ((m_runmode == FSM_RM_FLASH_PROGRAM) ||
 						(m_runmode == FSM_RM_FLASH_READ)) {
-						if (m_runmode == FSM_RM_FLASH_PROGRAM) {
-							strPrompt += "\nContinue with flash programming?";
-						} else {
-							strPrompt += "\nContinue with flash reading?";
-						}
-						int nResp = m_pUICallback->promptUser(CUICallback::PT_QUESTION, strPrompt,
-											CUICallback::Yes | CUICallback::No, CUICallback::Yes);
-						if (nResp == CUICallback::No) {
+						if (m_pUICallback->isInteractive()) {
 							if (m_runmode == FSM_RM_FLASH_PROGRAM) {
-								m_strLastError = tr("User aborted programming");
+								strPrompt += "\nContinue with flash programming?";
 							} else {
-								m_strLastError = tr("User aborted reading");
+								strPrompt += "\nContinue with flash reading?";
 							}
-							m_state = SPORT_FAIL;
-							emit flashComplete(false);
-							return;
+							int nResp = m_pUICallback->promptUser(CUICallback::PT_QUESTION, strPrompt,
+												CUICallback::Yes | CUICallback::No, CUICallback::Yes);
+							if (nResp == CUICallback::No) {
+								if (m_runmode == FSM_RM_FLASH_PROGRAM) {
+									m_strLastError = tr("User aborted programming");
+								} else {
+									m_strLastError = tr("User aborted reading");
+								}
+								m_state = SPORT_FAIL;
+								emit flashComplete(false);
+								return;
+							}
 						}
 
 						if (m_runmode == FSM_RM_FLASH_PROGRAM) {
@@ -158,8 +163,10 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 							m_pUICallback->setProgressText(tr("Reading in progress..."));
 						}
 					} else if (m_runmode == FSM_RM_DEVICE_ID) {
-						m_pUICallback->promptUser(CUICallback::PT_INFORMATION, strPrompt,
-											CUICallback::Ok, CUICallback::Ok);
+						if (m_pUICallback->isInteractive()) {
+							m_pUICallback->promptUser(CUICallback::PT_INFORMATION, strPrompt,
+												CUICallback::Ok, CUICallback::Ok);
+						}
 					}
 				}
 
