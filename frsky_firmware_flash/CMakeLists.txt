@@ -22,7 +22,7 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-project(frsky_sport_tool LANGUAGES CXX)
+project(frsky_firmware_flash LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -33,68 +33,44 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets SerialPort REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets SerialPort REQUIRED)
+find_package(QT NAMES Qt6 Qt5 COMPONENTS SerialPort REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS SerialPort REQUIRED)
 set(QT_LINK_LIBS
-	Qt${QT_VERSION_MAJOR}::Widgets
 	Qt${QT_VERSION_MAJOR}::SerialPort
 )
-
-if(WIN32)
-	set(GUI_TYPE WIN32)
-endif()
-if(APPLE)
-	set(GUI_TYPE MACOSX_BUNDLE)
-endif()
 
 # -----------------------------------------------------------------------------
 
 set(frsky_sport_tool_SOURCES
-	main.cpp
-	MainWindow.cpp
-	PersistentSettings.cpp
-	ConfigDlg.cpp
-	ProgDlg.cpp
-	frsky_sport_io.cpp
-	frsky_sport_firmware.cpp
-	SaveLoadFileDialog.cpp
-	crc.cpp
+	frsky_firmware_flash.cpp
+	../CLIProgDlg.cpp
+	../myio.cpp
+	../PersistentSettings.cpp
+	../frsky_sport_io.cpp
+	../frsky_sport_firmware.cpp
+	../crc.cpp
 )
 
 set(frsky_sport_tool_HEADERS
-	defs.h
-	main.h
-	MainWindow.h
-	PersistentSettings.h
-	ConfigDlg.h
-	UICallback.h
-	ProgDlg.h
-	frsky_sport_io.h
-	frsky_sport_firmware.h
-	SaveLoadFileDialog.h
-	crc.h
-)
-
-set(frsky_sport_tool_FORMS
-	MainWindow.ui
-	ConfigDlg.ui
-)
-
-set(frsky_sport_tool_RESOURCES
-	frsky_sport_tool.qrc
+	../CLIProgDlg.h
+	../myio.h
+	../defs.h
+	../PersistentSettings.h
+	../UICallback.h
+	../frsky_sport_io.h
+	../frsky_sport_firmware.h
+	../crc.h
 )
 
 # -----------------------------------------------------------------------------
 
-add_executable(frsky_sport_tool ${GUI_TYPE}
+add_executable(frsky_firmware_flash
 	${frsky_sport_tool_SOURCES}
 	${frsky_sport_tool_HEADERS}
-	${frsky_sport_tool_FORMS}
-	${frsky_sport_tool_RESOURCES}
 )
 
-target_link_libraries(frsky_sport_tool PRIVATE
+target_link_libraries(frsky_firmware_flash PRIVATE
 	${QT_LINK_LIBS}
 )
 
-add_subdirectory(frsky_firmware_flash)
+target_include_directories(frsky_firmware_flash PRIVATE ..)
