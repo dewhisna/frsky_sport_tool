@@ -45,41 +45,80 @@ int main(int argc, char *argv[])
 
 	CPersistentSettings::instance()->loadSettings();
 
-	SPORT_ID_ENUM nPort = CPersistentSettings::instance()->getFirmwareSportPort();
-	QString strPort = CPersistentSettings::instance()->getDeviceSerialPort(nPort);
-	bool bHavePortName =!strPort.isEmpty();
+	QString strFirmware;
+	SPORT_ID_ENUM nSport = CPersistentSettings::instance()->getFirmwareSportPort();
+	QString strPort = CPersistentSettings::instance()->getDeviceSerialPort(nSport);
+	bool bHavePortNameSetting =!strPort.isEmpty();
+	int nBaudRate = CPersistentSettings::instance()->getDeviceBaudRate(nSport);
+	bool bInteractive = false;
+	bool bNeedUsage = false;
+	int nArgsFound = 0;
 
-	if ((argc < 2) || (!bHavePortName && (argc < 3))) {
-		std::cerr << "Frsky Firmware Flash Programming Tool" << std::endl;
-		if (bHavePortName) {
-			std::cerr << "Usage: frsky_firmware_flash <firmware-filename> [<port>]" << std::endl;
+	for (int ndx = 1; ndx < argc; ++ndx) {
+		QString strArg = argv[ndx];
+		if (!strArg.startsWith("-")) {
+			switch (nArgsFound) {
+				case 0:
+					strFirmware = strArg;
+					break;
+				case 1:
+					strPort = strArg;
+					break;
+				default:
+					bNeedUsage = true;
+					break;
+			}
+			++nArgsFound;
+		} else if (strArg.startsWith("-b")) {
+			if ((strArg == "-b") && (argc > ndx+1)) {
+				nBaudRate = strtoul(argv[ndx+1], nullptr, 0);
+				++ndx;
+			} else {
+				nBaudRate = strtoul(strArg.mid(2).toUtf8().data(), nullptr, 0);
+			}
+		} else if (strArg == "-i") {
+			bInteractive = true;
 		} else {
-			std::cerr << "Usage: frsky_firmware_flash <firmware-filename> <port>" << std::endl;
+			bNeedUsage = true;
+		}
+	}
+	if (strFirmware.isEmpty() || strPort.isEmpty()) bNeedUsage = true;
+
+	if (bNeedUsage) {
+		std::cerr << "Frsky Firmware Flash Programming Tool" << std::endl;
+		if (bHavePortNameSetting) {
+			std::cerr << "Usage: frsky_firmware_flash [-b <baudrate>] [-i] <firmware-filename> [<port>]" << std::endl;
+		} else {
+			std::cerr << "Usage: frsky_firmware_flash [-b <baudrate>] [-i] <firmware-filename> <port>" << std::endl;
 		}
 		std::cerr << std::endl;
 		std::cerr << "Where:" << std::endl;
+		std::cerr << "    -b <baudrate> = optional baud-rate specifier" << std::endl;
+		std::cerr << "                    (if omitted, will use the current setting of " << CPersistentSettings::instance()->getDeviceBaudRate(nSport) << ")" << std::endl;
+		std::cerr << "     -i = interactive mode, enables prompts" << std::endl;
 		std::cerr << "    <firmware-filename> = File name/path to firmware file" << std::endl;
 		std::cerr << "    <port> = Serial Port to use" << std::endl;
-		if (bHavePortName) {
-			std::cerr << "             (Optional, will use current setting of \"" << strPort.toUtf8().data() << "\" if not specified)" << std::endl;
+		if (bHavePortNameSetting) {
+			std::cerr << "             (Optional, will use current setting of \"" << CPersistentSettings::instance()->getDeviceSerialPort(nSport).toUtf8().data() << "\" if not specified)" << std::endl;
 		}
 		std::cerr << std::endl << std::endl;
 
 		return -1;
 	}
 
-	QString strOverridePort = ((argc >= 3) ? QString::fromUtf8(argv[2]) : QString());
+	std::cerr << "Serial Port: " << strPort.toUtf8().data() << std::endl;
+	std::cerr << "Baud Rate: " << nBaudRate << std::endl;
 
-	CFrskySportIO sport(nPort);
-	if (!sport.openPort(strOverridePort)) {
+	CFrskySportIO sport(nSport);
+	if (!sport.openPort(strPort, nBaudRate)) {
 		std::cerr << "Failed to open serial port" << std::endl;
 		std::cerr << sport.getLastError().toUtf8().data() << std::endl;
 		return -2;
 	}
 
-	QFile fileFirmware(argv[1]);
+	QFile fileFirmware(strFirmware);
 	if (!fileFirmware.open(QIODevice::ReadOnly)) {
-		std::cerr << "Failed to open firmware file \"" << argv[1] << "\" for reading" << std::endl;
+		std::cerr << "Failed to open firmware file \"" << strFirmware.toUtf8().data() << "\" for reading" << std::endl;
 		return -3;
 	}
 
@@ -88,6 +127,8 @@ int main(int argc, char *argv[])
 
 	CCLIProgDlg dlgProg;
 	CFrskyDeviceFirmwareUpdate fsm(sport, &dlgProg);
+
+	dlgProg.setInteractive(bInteractive);
 
 	if (!fsm.flashDeviceFirmware(fileFirmware, bIsFrsk, true)) {
 		std::cerr << fsm.getLastError().toUtf8().data() << std::endl;
