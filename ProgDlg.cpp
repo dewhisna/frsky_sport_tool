@@ -67,6 +67,11 @@ void CProgDlg::hookCancel(QObject *pObject, const char *member)
 	pObject->connect(&m_dlgProgress, SIGNAL(canceled()), pObject, member);
 }
 
+void CProgDlg::unhookCancel(QObject *pObject, const char *member)
+{
+	pObject->disconnect(&m_dlgProgress, SIGNAL(canceled()), pObject, member);
+}
+
 BTN_TYPE CProgDlg::promptUser(PROMPT_TYPE nPromptType,
 					const QString &strText,
 					BTN_TYPE nButtons,

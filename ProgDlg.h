@@ -44,6 +44,7 @@ public:
 	virtual void setProgressText(const QString &strStatus) override;
 	virtual void enableCancel(bool bEnable) override;
 	virtual void hookCancel(QObject *pObject, const char *member) override;
+	virtual void unhookCancel(QObject *pObject, const char *member) override;
 	// ----
 	virtual BTN_TYPE promptUser(PROMPT_TYPE nPromptType,
 						const QString &strText,
