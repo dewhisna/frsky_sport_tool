@@ -49,7 +49,7 @@ public:
 	virtual BTN_TYPE promptUser(PROMPT_TYPE nPromptType,
 						const QString &strText,
 						BTN_TYPE nButtons,
-						BTN_TYPE nDefaultButton) override;
+						BTN_TYPE nDefaultButton = NoButton) override;
 	// ----
 	virtual void setRxDataStatusLED(bool bStatus) override;		// Rx Data Status LED, On/Off or Color change
 	virtual void setTxDataStatusLED(bool bStatus) override;		// Tx Data Status LED, On/Off or Color change
