@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 		std::cerr << "Where:" << std::endl;
 		std::cerr << "    -b <baudrate> = optional baud-rate specifier" << std::endl;
 		std::cerr << "                    (if omitted, will use the current setting of " << CPersistentSettings::instance()->getDeviceBaudRate(nSport) << ")" << std::endl;
-		std::cerr << "     -i = interactive mode, enables prompts" << std::endl;
+		std::cerr << "    -i = interactive mode, enables prompts" << std::endl;
 		std::cerr << "    <firmware-filename> = File name/path to firmware file" << std::endl;
 		std::cerr << "    <port> = Serial Port to use" << std::endl;
 		if (bHavePortNameSetting) {
@@ -106,6 +106,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	if (bInteractive) std::cerr << "Interactive Mode" << std::endl;
 	std::cerr << "Serial Port: " << strPort.toUtf8().data() << std::endl;
 	std::cerr << "Baud Rate: " << nBaudRate << std::endl;
 
