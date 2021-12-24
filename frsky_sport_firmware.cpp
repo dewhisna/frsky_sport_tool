@@ -140,7 +140,7 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 							strPrompt += "\nContinue with flash reading?";
 						}
 						int nResp = m_pUICallback->promptUser(CUICallback::PT_QUESTION, strPrompt,
-											CUICallback::Yes | CUICallback::No, CUICallback::NoButton);
+											CUICallback::Yes | CUICallback::No, CUICallback::Yes);
 						if (nResp == CUICallback::No) {
 							if (m_runmode == FSM_RM_FLASH_PROGRAM) {
 								m_strLastError = tr("User aborted programming");
@@ -159,7 +159,7 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 						}
 					} else if (m_runmode == FSM_RM_DEVICE_ID) {
 						m_pUICallback->promptUser(CUICallback::PT_INFORMATION, strPrompt,
-											CUICallback::Ok, CUICallback::NoButton);
+											CUICallback::Ok, CUICallback::Ok);
 					}
 				}
 
