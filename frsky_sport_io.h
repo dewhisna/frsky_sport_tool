@@ -155,9 +155,9 @@ PACK(union CSportTelemetryPacket
 
 PACK(union CSportFirmwarePacket
 {
-	CSportFirmwarePacket(uint8_t nCmd, uint32_t nData = 0, uint8_t nPacket = 0)
+	CSportFirmwarePacket(uint8_t nCmd, uint32_t nData = 0, uint8_t nPacket = 0, bool bIsDevice = false)
 	{
-		m_physicalId = PHYS_ID_FIRMCMD;
+		m_physicalId = bIsDevice ? PHYS_ID_FIRMRSP : PHYS_ID_FIRMCMD;
 		m_primId = PRIM_ID_FIRMWARE_FRAME;
 		m_cmd = nCmd;
 		m_data[0] = (nData & 0xFF);
@@ -166,10 +166,10 @@ PACK(union CSportFirmwarePacket
 		m_data[3] = ((nData >> 24) & 0xFF);
 		m_packet = nPacket;
 	}
-	CSportFirmwarePacket(uint8_t nCmd, uint8_t *pData, uint8_t nPacket = 0)
+	CSportFirmwarePacket(uint8_t nCmd, uint8_t *pData, uint8_t nPacket = 0, bool bIsDevice = false)
 	{
 		assert(pData != nullptr);
-		m_physicalId = PHYS_ID_FIRMCMD;
+		m_physicalId = bIsDevice ? PHYS_ID_FIRMRSP : PHYS_ID_FIRMCMD;
 		m_primId = PRIM_ID_FIRMWARE_FRAME;
 		m_cmd = nCmd;
 		m_data[0] = pData[0];
