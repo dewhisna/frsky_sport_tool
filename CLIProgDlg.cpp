@@ -34,24 +34,24 @@ namespace {
 		QString m_strText;
 	};
 	const BTN_MAP conarrButtonMap[] = {
-		{ CUICallback::Ok, 'K', "Ok" },
-		{ CUICallback::Save, 'S', "Save" },
-		{ CUICallback::SaveAll, 'A', "SaveAll" },
-		{ CUICallback::Open, 'P', "Open" },
-		{ CUICallback::Yes, 'Y', "Yes" },
-		{ CUICallback::YesToAll, 'T', "YesToAll" },
-		{ CUICallback::No, 'N', "No" },
-		{ CUICallback::NoToAll, 'O', "NoToAll" },
-		{ CUICallback::Abort, 'B', "Abort" },
-		{ CUICallback::Retry, 'R', "Retry" },
-		{ CUICallback::Ignore, 'I', "Ignore" },
-		{ CUICallback::Close, 'L', "Close" },
-		{ CUICallback::Cancel, 'C', "Cancel" },
-		{ CUICallback::Discard, 'D', "Discard" },
-		{ CUICallback::Help, 'H', "Help" },
-		{ CUICallback::Apply, 'V', "Apply" },
-		{ CUICallback::Reset, 'E', "Reset" },
-		{ CUICallback::RestoreDefaults, 'F', "RestoreDefaults" },
+		{ CUICallback::Ok, 'K', CCLIProgDlg::tr("Ok") },
+		{ CUICallback::Save, 'S', CCLIProgDlg::tr("Save") },
+		{ CUICallback::SaveAll, 'A', CCLIProgDlg::tr("SaveAll") },
+		{ CUICallback::Open, 'P', CCLIProgDlg::tr("Open") },
+		{ CUICallback::Yes, 'Y', CCLIProgDlg::tr("Yes") },
+		{ CUICallback::YesToAll, 'T', CCLIProgDlg::tr("YesToAll") },
+		{ CUICallback::No, 'N', CCLIProgDlg::tr("No") },
+		{ CUICallback::NoToAll, 'O', CCLIProgDlg::tr("NoToAll") },
+		{ CUICallback::Abort, 'B', CCLIProgDlg::tr("Abort") },
+		{ CUICallback::Retry, 'R', CCLIProgDlg::tr("Retry") },
+		{ CUICallback::Ignore, 'I', CCLIProgDlg::tr("Ignore") },
+		{ CUICallback::Close, 'L', CCLIProgDlg::tr("Close") },
+		{ CUICallback::Cancel, 'C', CCLIProgDlg::tr("Cancel") },
+		{ CUICallback::Discard, 'D', CCLIProgDlg::tr("Discard") },
+		{ CUICallback::Help, 'H', CCLIProgDlg::tr("Help") },
+		{ CUICallback::Apply, 'V', CCLIProgDlg::tr("Apply") },
+		{ CUICallback::Reset, 'E', CCLIProgDlg::tr("Reset") },
+		{ CUICallback::RestoreDefaults, 'F', CCLIProgDlg::tr("RestoreDefaults") },
 		// ----
 		{ CUICallback::NoButton, ' ', "" },
 	};
@@ -122,10 +122,12 @@ BTN_TYPE CCLIProgDlg::promptUser(PROMPT_TYPE nPromptType,
 	const BTN_MAP *pMap = &conarrButtonMap[0];
 	while (pMap->m_nBT != CUICallback::NoButton) {
 		if (nButtons & pMap->m_nBT) {
-			slButtons.append(QString(pMap->m_cKey) + " " + pMap->m_strText);
+			slButtons.append(QString(pMap->m_cKey) + "=" + pMap->m_strText);
 		}
 		++pMap;
 	}
+
+	std::cerr << std::endl << tr("Press:").toUtf8().data();
 
 	bool bDone = slButtons.isEmpty();
 	BTN_TYPE nBtn = nDefaultButton;
