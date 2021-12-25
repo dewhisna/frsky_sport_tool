@@ -45,7 +45,8 @@ int main(int argc, char *argv[])
 
 	CPersistentSettings::instance()->loadSettings();
 
-	QString strFirmware;
+	QString strFirmwareIn;
+	QString strFirmwareOut;
 	QString strLogFile;
 	SPORT_ID_ENUM nSport = CPersistentSettings::instance()->getFirmwareSportPort();
 	QString strPort;
@@ -75,10 +76,17 @@ int main(int argc, char *argv[])
 			}
 		} else if (strArg.startsWith("-f")) {
 			if ((strArg == "-f") && (argc > ndx+1)) {
-				strFirmware = argv[ndx+1];
+				strFirmwareIn = argv[ndx+1];
 				++ndx;
 			} else {
-				strFirmware = strArg.mid(2);
+				strFirmwareIn = strArg.mid(2);
+			}
+		} else if (strArg.startsWith("-w")) {
+			if ((strArg == "-w") && (argc > ndx+1)) {
+				strFirmwareOut = argv[ndx+1];
+				++ndx;
+			} else {
+				strFirmwareOut = strArg.mid(2);
 			}
 		} else if (strArg.startsWith("-l")) {
 			if ((strArg == "-l") && (argc > ndx+1)) {
@@ -99,14 +107,16 @@ int main(int argc, char *argv[])
 
 	if (bNeedUsage) {
 		std::cerr << "Frsky Device Emulation Tool (for testing)" << std::endl;
-		std::cerr << "Usage: frsky_device_emu [-b <baudrate>] [-l <logfile>] [-f <firmware>] [-i] <port>" << std::endl;
+		std::cerr << "Usage: frsky_device_emu [-b <baudrate>] [-l <logfile>] [-f <firmware-in>] [-f <firmware-out>] [-i] <port>" << std::endl;
 		std::cerr << std::endl;
 		std::cerr << "Where:" << std::endl;
 		std::cerr << "    -b <baudrate> = optional baud-rate specifier" << std::endl;
 		std::cerr << "                    (if omitted, will use the current setting of " << CPersistentSettings::instance()->getDeviceBaudRate(nSport) << ")" << std::endl;
 		std::cerr << "    -l <logfile>  = optional communications log file to generate" << std::endl;
-		std::cerr << "    -f <firmware> = optional firmware filename to use for comparison" << std::endl;
+		std::cerr << "    -f <firmware-in> = optional input firmware filename to use for comparison" << std::endl;
 		std::cerr << "                    (if omitted, will skip byte-wise checks for firmware content)" << std::endl;
+		std::cerr << "    -w <firware-out> = optional output firmware filename to write received data" << std::endl;
+		std::cerr << "                    (written firmware will always be in headerless .frk format)" << std::endl;
 		std::cerr << "    -i = interactive mode, enables prompts" << std::endl;
 		std::cerr << std::endl;
 		std::cerr << "    <firmware-filename> = File name/path to firmware file" << std::endl;
@@ -119,7 +129,15 @@ int main(int argc, char *argv[])
 	if (bInteractive) std::cerr << "Interactive Mode" << std::endl;
 	std::cerr << "Serial Port: " << strPort.toUtf8().data() << std::endl;
 	std::cerr << "Baud Rate: " << nBaudRate << std::endl;
-	std::cerr << "Log File: " << strLogFile.toUtf8().data() << std::endl;
+	if (!strLogFile.isEmpty()) {
+		std::cerr << "Log File: " << strLogFile.toUtf8().data() << std::endl;
+	}
+	if (!strFirmwareIn.isEmpty()) {
+		std::cerr << "Input (comparison) Firmware File: " << strFirmwareIn.toUtf8().data() << std::endl;
+	}
+	if (!strFirmwareOut.isEmpty()) {
+		std::cerr << "Output (received) Firmware File: " << strFirmwareOut.toUtf8().data() << std::endl;
+	}
 
 	CFrskySportIO sport(nSport);
 	if (!sport.openPort(strPort, nBaudRate)) {
@@ -128,21 +146,35 @@ int main(int argc, char *argv[])
 		return -2;
 	}
 
-	QFile fileFirmware(strFirmware);
-	if (!strFirmware.isEmpty() && !fileFirmware.open(QIODevice::ReadOnly)) {
-		std::cerr << "Failed to open firmware file \"" << strFirmware.toUtf8().data() << "\" for reading" << std::endl;
+	QFile fileFirmwareIn(strFirmwareIn);
+	if (!strFirmwareIn.isEmpty() && !fileFirmwareIn.open(QIODevice::ReadOnly)) {
+		std::cerr << "Failed to open input firmware file \"" << strFirmwareIn.toUtf8().data() << "\" for reading" << std::endl;
 		return -3;
 	}
 
-	QFileInfo fiFirmware(fileFirmware);
-	bool bIsFrsk = (fiFirmware.suffix().compare("frsk", Qt::CaseInsensitive) == 0);
+	QFileInfo fiFirmwareIn(fileFirmwareIn);
+	bool bIsFrsk = (fiFirmwareIn.suffix().compare("frsk", Qt::CaseInsensitive) == 0);
+
+	QFile fileFirmwareOut(strFirmwareOut);
+	if (!strFirmwareOut.isEmpty() && !fileFirmwareOut.open(QIODevice::WriteOnly)) {
+		std::cerr << "Failed to open output firmware file \"" << strFirmwareOut.toUtf8().data() << "\" for writing" << std::endl;
+		return -4;
+	}
+
+	if (!strFirmwareOut.isEmpty()) {
+		QFileInfo fiFirmwareOut(fileFirmwareOut);
+		if (fiFirmwareOut.suffix().compare("frsk", Qt::CaseInsensitive) == 0) {
+			// TODO : Add support for writing .frsk firmware output
+			std::cerr << "*** Warning: Output firmware filename is .frsk suffix, but will be written as headerless .frk format and won't be readable by tools unless renamed" << std::endl;
+		}
+	}
 
 	CLogFile logFile;
 	if (!strLogFile.isEmpty()) {
 		if (!logFile.openLogFile(strLogFile, QIODevice::WriteOnly)) {
 			std::cerr << "Failed to open \"" << strLogFile.toUtf8().data() << "\" for writing" << std::endl;
 			std::cerr << logFile.getLastError().toUtf8().data() << std::endl;
-			return -4;
+			return -5;
 		}
 		QObject::connect(&sport, &CFrskySportIO::writeLogString, &sport,
 							[&logFile](SPORT_ID_ENUM nSport, const QString &strMessage)->void {
@@ -157,20 +189,29 @@ int main(int argc, char *argv[])
 	CFrskySportDeviceEmu emu(sport, &dlgProg);
 	QObject::connect(&emu, SIGNAL(emulationErrorEncountered(QString)), &dlgProg, SLOT(writeMessage(QString)));
 
-	if (fileFirmware.isOpen()) {
-		if (!emu.setFirmware(fileFirmware, bIsFrsk)) {
+	if (fileFirmwareIn.isOpen()) {
+		if (!emu.setFirmware(fileFirmwareIn, bIsFrsk)) {
 			// No need to print the error, as that will happen in the
 			//	write message callback above
-			return -5;
+			return -6;
 		}
 	}
 
-	if (!emu.startDeviceEmulation(CFrskySportDeviceEmu::FRSKDEV_RX, true)) {
+	bool bSuccess = emu.startDeviceEmulation(CFrskySportDeviceEmu::FRSKDEV_RX, true);
+
+	if (fileFirmwareOut.isOpen() && fileFirmwareOut.isWritable() && !emu.getFirmware().isEmpty()) {
+		fileFirmwareOut.write(emu.getFirmware());
+	}
+
+	if (fileFirmwareIn.isOpen()) fileFirmwareIn.close();
+	if (fileFirmwareOut.isOpen()) fileFirmwareOut.close();
+
+	if (bSuccess) {
+		std::cerr << "Emulation was successful" << std::endl;
+	} else {
 		// No need to print the error, as that will happen in the
 		//	write message callback above
-		return -6;
-	} else {
-		std::cerr << "Emulation was successful" << std::endl;
+		return -7;
 	}
 
 	// Don't save persistent settings here, since we aren't changing anything
