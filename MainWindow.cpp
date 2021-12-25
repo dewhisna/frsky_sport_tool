@@ -262,6 +262,8 @@ void CMainWindow::en_firmwareProgram()
 	CFrskyDeviceFirmwareUpdate fsm(*m_arrpSport[CPersistentSettings::instance()->getFirmwareSportPort()], &dlgProg, this);
 	if (!fsm.flashDeviceFirmware(fileFirmware, bIsFrsk, true)) {
 		QMessageBox::critical(dlgProg.parent(), dlgProg.title(), fsm.getLastError());
+	} else {
+		QMessageBox::information(dlgProg.parent(), dlgProg.title(), tr("Firmware Programming Successful!"));
 	}
 
 	fileFirmware.close();
@@ -299,6 +301,8 @@ void CMainWindow::en_firmwareRead()
 	CFrskyDeviceFirmwareUpdate fsm(*m_arrpSport[CPersistentSettings::instance()->getFirmwareSportPort()], &dlgProg, this);
 	if (!fsm.readDeviceFirmware(fileFirmware, true)) {
 		QMessageBox::critical(dlgProg.parent(), dlgProg.title(), fsm.getLastError());
+	} else {
+		QMessageBox::information(dlgProg.parent(), dlgProg.title(), tr("Firmware Reading Successful!"));
 	}
 
 	fileFirmware.close();
