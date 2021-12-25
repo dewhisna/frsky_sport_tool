@@ -298,21 +298,25 @@ CFrskySportDeviceEmu::FrameProcessResult CFrskySportDeviceEmu::processFrame()
 					break;
 
 				case PRIM_DATA_WORD:				// Receive Data Word Xfer
-					results.m_strLogDetail = tr("Transfer Data Word");
+					results.m_strLogDetail = tr("Data Xfer");
 					if (m_state == SPORT_DATA_TRANSFER) {		// Data Transfer can only happen after Cmd Upload or Cmd Download has completed
 						if (m_bFirmwareRxMode) {
 							m_arrDataRead[0] = m_rxBuffer.firmwarePacket().m_data[0];
 							m_arrDataRead[1] = m_rxBuffer.firmwarePacket().m_data[1];
 							m_arrDataRead[2] = m_rxBuffer.firmwarePacket().m_data[2];
 							m_arrDataRead[3] = m_rxBuffer.firmwarePacket().m_data[3];
+							results.m_strLogDetail += QString(": %1.%2.%3.%4")
+									.arg(m_arrDataRead[0], 2, 16, QChar('0'))
+									.arg(m_arrDataRead[1], 2, 16, QChar('0'))
+									.arg(m_arrDataRead[2], 2, 16, QChar('0'))
+									.arg(m_arrDataRead[3], 2, 16, QChar('0'));
 							m_state = SPORT_DATA_REQ;
-							results.m_bAdvanceState = true;
 						} else {
 							m_nReqAddress = m_rxBuffer.firmwarePacket().dataValue();
-							results.m_strLogDetail += QString("  Addr: 0x%1 ?").arg(m_nReqAddress, 8, 16, QChar('0'));
+							results.m_strLogDetail += QString(" Addr: 0x%1 ?").arg(m_nReqAddress, 8, 16, QChar('0'));
 							m_state = SPORT_DATA_AVAIL;
-							results.m_bAdvanceState = true;
 						}
+						results.m_bAdvanceState = true;
 					} else {
 						emuError(tr("Data Transfer can only happen after CMD Upload or CMD Download"));
 						results.m_strLogDetail += tr("   *** Ignoring: Can only happen after CMD Upload/Download");
