@@ -49,17 +49,30 @@ endif()
 
 # -----------------------------------------------------------------------------
 
+# Add a custom command that produces version.cpp, plus
+# a dummy output that's not actually produced, in order
+# to force version.cmake to always be re-run before the build
+add_custom_target(VersionInfo ALL
+	${CMAKE_COMMAND} -P ${CMAKE_CURRENT_LIST_DIR}/version.cmake
+	BYPRODUCTS	${CMAKE_BINARY_DIR}/version.cpp
+				${CMAKE_BINARY_DIR}/_version.cpp
+)
+
+# -----------------------------------------------------------------------------
+
 set(frsky_sport_tool_SOURCES
 	main.cpp
 	MainWindow.cpp
 	PersistentSettings.cpp
 	ConfigDlg.cpp
+	AboutDlg.cpp
 	ProgDlg.cpp
 	LogFile.cpp
 	frsky_sport_io.cpp
 	frsky_sport_firmware.cpp
 	SaveLoadFileDialog.cpp
 	crc.cpp
+	${CMAKE_BINARY_DIR}/version.cpp
 )
 
 set(frsky_sport_tool_HEADERS
@@ -68,6 +81,7 @@ set(frsky_sport_tool_HEADERS
 	MainWindow.h
 	PersistentSettings.h
 	ConfigDlg.h
+	AboutDlg.h
 	UICallback.h
 	ProgDlg.h
 	LogFile.h
@@ -75,11 +89,13 @@ set(frsky_sport_tool_HEADERS
 	frsky_sport_firmware.h
 	SaveLoadFileDialog.h
 	crc.h
+	version.h
 )
 
 set(frsky_sport_tool_FORMS
 	MainWindow.ui
 	ConfigDlg.ui
+	AboutDlg.ui
 )
 
 set(frsky_sport_tool_RESOURCES
@@ -94,6 +110,8 @@ add_executable(frsky_sport_tool ${GUI_TYPE}
 	${frsky_sport_tool_FORMS}
 	${frsky_sport_tool_RESOURCES}
 )
+
+add_dependencies(frsky_sport_tool VersionInfo)
 
 target_link_libraries(frsky_sport_tool PRIVATE
 	${QT_LINK_LIBS}

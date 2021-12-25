@@ -32,13 +32,26 @@
 
 #include <iostream>
 
+#include <version.h>
+
 // ============================================================================
 
 int main(int argc, char *argv[])
 {
 	QCoreApplication app(argc, argv);
 
-	app.setApplicationVersion("1.0.0");
+	QString strREV = GIT_REV;
+	QString strTAG = GIT_TAG;
+	QString strBRANCH = GIT_BRANCH;
+
+	QString strVersion;
+	if (!strTAG.isEmpty()) {
+		strVersion = strTAG;
+	} else {
+		strVersion = QString("%1/%2").arg(strBRANCH, strREV);
+	}
+
+	app.setApplicationVersion(strVersion);
 	app.setApplicationName("frsky_sport_tool");		// Note: use package name here instead of this app so we can use its common settings
 	app.setOrganizationName("Dewtronics");
 	app.setOrganizationDomain("dewtronics.com");
@@ -86,6 +99,7 @@ int main(int argc, char *argv[])
 
 	if (bNeedUsage) {
 		std::cerr << "Frsky Firmware Flash Programming Tool" << std::endl;
+		std::cerr << "Version: " << strVersion.toUtf8().data() << std::endl;
 		if (bHavePortNameSetting) {
 			std::cerr << "Usage: frsky_firmware_flash [-b <baudrate>] [-i] <firmware-filename> [<port>]" << std::endl;
 		} else {
@@ -105,6 +119,8 @@ int main(int argc, char *argv[])
 
 		return -1;
 	}
+
+	std::cerr << "frsky_firmware_flash version: " << strVersion.toUtf8().data() << std::endl;
 
 	if (bInteractive) std::cerr << "Interactive Mode" << std::endl;
 	std::cerr << "Serial Port: " << strPort.toUtf8().data() << std::endl;

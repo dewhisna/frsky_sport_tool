@@ -32,6 +32,8 @@
 #include "frsky_sport_firmware.h"
 #include "ProgDlg.h"
 
+#include "AboutDlg.h"
+
 #include <QMessageBox>
 #include <QTimer>
 #include <QFileInfo>
@@ -103,6 +105,16 @@ CMainWindow::CMainWindow(QWidget *parent) :
 
 	m_pFirmwareReadAction = pFirmwareMenu->addAction(tr("&Read Firmware from Device..."), this, SLOT(en_firmwareRead()));
 	m_pFirmwareReadAction->setEnabled(m_pConnectAction->isChecked());
+
+	// --------------------------------
+
+	QMenu *pHelpMenu = ui->menuBar->addMenu(tr("&Help"));
+
+	pAction = pHelpMenu->addAction(tr("&About..."));
+	connect(pAction, &QAction::triggered, this, [this]()->void {
+		CAboutDlg dlg(this);
+		dlg.exec();
+	});
 
 	// --------------------------------
 

@@ -25,6 +25,8 @@
 
 #include "PersistentSettings.h"
 
+#include "version.h"
+
 QPointer<QApplication> g_pMyApplication = nullptr;
 
 int main(int argc, char *argv[])
@@ -32,7 +34,18 @@ int main(int argc, char *argv[])
 	QApplication *pApp = new QApplication(argc, argv);
 	g_pMyApplication = pApp;
 
-	pApp->setApplicationVersion("1.0.0");
+	QString strREV = GIT_REV;
+	QString strTAG = GIT_TAG;
+	QString strBRANCH = GIT_BRANCH;
+
+	QString strVersion;
+	if (!strTAG.isEmpty()) {
+		strVersion = strTAG;
+	} else {
+		strVersion = QString("%1/%2").arg(strBRANCH, strREV);
+	}
+
+	pApp->setApplicationVersion(strVersion);
 	pApp->setApplicationName("frsky_sport_tool");
 	pApp->setOrganizationName("Dewtronics");
 	pApp->setOrganizationDomain("dewtronics.com");

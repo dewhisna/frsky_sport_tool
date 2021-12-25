@@ -32,13 +32,26 @@
 
 #include <iostream>
 
+#include <version.h>
+
 // ============================================================================
 
 int main(int argc, char *argv[])
 {
 	QCoreApplication app(argc, argv);
 
-	app.setApplicationVersion("1.0.0");
+	QString strREV = GIT_REV;
+	QString strTAG = GIT_TAG;
+	QString strBRANCH = GIT_BRANCH;
+
+	QString strVersion;
+	if (!strTAG.isEmpty()) {
+		strVersion = strTAG;
+	} else {
+		strVersion = QString("%1/%2").arg(strBRANCH, strREV);
+	}
+
+	app.setApplicationVersion(strVersion);
 	app.setApplicationName("frsky_sport_tool");		// Note: use package name here instead of this app so we can use its common settings
 	app.setOrganizationName("Dewtronics");
 	app.setOrganizationDomain("dewtronics.com");
@@ -107,6 +120,7 @@ int main(int argc, char *argv[])
 
 	if (bNeedUsage) {
 		std::cerr << "Frsky Device Emulation Tool (for testing)" << std::endl;
+		std::cerr << "Version: " << strVersion.toUtf8().data() << std::endl;
 		std::cerr << "Usage: frsky_device_emu [-b <baudrate>] [-l <logfile>] [-f <firmware-in>] [-f <firmware-out>] [-i] <port>" << std::endl;
 		std::cerr << std::endl;
 		std::cerr << "Where:" << std::endl;
@@ -125,6 +139,8 @@ int main(int argc, char *argv[])
 
 		return -1;
 	}
+
+	std::cerr << "frsky_device_emu version: " << strVersion.toUtf8().data() << std::endl;
 
 	if (bInteractive) std::cerr << "Interactive Mode" << std::endl;
 	std::cerr << "Serial Port: " << strPort.toUtf8().data() << std::endl;

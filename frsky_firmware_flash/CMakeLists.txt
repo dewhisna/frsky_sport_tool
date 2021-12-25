@@ -49,6 +49,7 @@ set(frsky_sport_tool_SOURCES
 	../frsky_sport_io.cpp
 	../frsky_sport_firmware.cpp
 	../crc.cpp
+	${CMAKE_BINARY_DIR}/version.cpp
 )
 
 set(frsky_sport_tool_HEADERS
@@ -60,6 +61,7 @@ set(frsky_sport_tool_HEADERS
 	../frsky_sport_io.h
 	../frsky_sport_firmware.h
 	../crc.h
+	../version.h
 )
 
 # -----------------------------------------------------------------------------
