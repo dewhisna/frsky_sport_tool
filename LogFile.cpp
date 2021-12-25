@@ -20,62 +20,39 @@
 **
 ****************************************************************************/
 
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
-
-#include "PersistentSettings.h"
 #include "LogFile.h"
 
-#include <QMainWindow>
-#include <QPointer>
-#include <QAction>
-#include <QActionGroup>
-
-// Forward Declarations
-class CFrskySportIO;
-
 // ============================================================================
 
-namespace Ui {
-	class CMainWindow;
+CLogFile::CLogFile(QObject *pParent)
+	:	QObject(pParent)
+{
+	m_timerLogFile.start();
 }
 
-class CMainWindow : public QMainWindow
+CLogFile::~CLogFile()
 {
-	Q_OBJECT
+}
 
-public:
-	explicit CMainWindow(QWidget *parent = nullptr);
-	~CMainWindow();
+bool CLogFile::openLogFile(const QString &strFilePathName, QIODevice::OpenMode nOpenMode)
+{
+	m_fileLogFile.setFileName(strFilePathName);
+	if (!m_fileLogFile.open(nOpenMode)) return false;
+	m_pLogFile.reset(new QTextStream(static_cast<QIODevice *>(&m_fileLogFile)));
+	return true;
+}
 
-public slots:
-	void writeLogString(SPORT_ID_ENUM nSport, const QString &strLogString);
+void CLogFile::closeLogFile()
+{
+	m_pLogFile.reset();
+	m_fileLogFile.close();
+}
 
-protected slots:
-	void en_connect(bool bConnect);
-	void en_configure();
-	void en_writeLogFile(bool bOpen);
-	// ----
-	void en_firmwareID();
-	void en_firmwareProgram();
-	void en_firmwareRead();
-
-protected:
-	CLogFile m_logFile;
-
-	QPointer<CFrskySportIO> m_arrpSport[SPIDE_COUNT];
-
-private:
-	QPointer<QAction> m_pConnectAction;
-	QPointer<QAction> m_pConfigureAction;
-	QPointer<QAction> m_pWriteLogFileAction;
-	QPointer<QAction> m_pFirmwareIDAction;
-	QPointer<QAction> m_pFirmwareProgramAction;
-	QPointer<QAction> m_pFirmwareReadAction;
-
-	Ui::CMainWindow *ui;
-};
+void CLogFile::writeLogString(const QString &strLogString)
+{
+	if (!m_pLogFile.isNull() && m_pLogFile->device()->isOpen() && m_pLogFile->device()->isWritable()) {
+		(*m_pLogFile) << QString("%1").arg(elapsedTime(), 0, 'f', 4) << ": " << strLogString << Qt::endl;
+	}
+}
 
 // ============================================================================
-
-#endif // MAINWINDOW_H

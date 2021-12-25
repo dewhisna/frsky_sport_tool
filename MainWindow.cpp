@@ -120,7 +120,7 @@ CMainWindow::CMainWindow(QWidget *parent) :
 
 	// --------------------------------
 
-	m_timerLogFile.start();
+	m_logFile.resetTimer();
 }
 
 CMainWindow::~CMainWindow()
@@ -157,7 +157,7 @@ void CMainWindow::en_connect(bool bConnect)
 	}
 
 	if (!m_pWriteLogFileAction->isChecked()) {
-		m_timerLogFile.restart();
+		m_logFile.resetTimer();
 	}
 }
 
@@ -181,8 +181,7 @@ void CMainWindow::en_writeLogFile(bool bOpen)
 		if (!strFilePathName.isEmpty()) {
 			CPersistentSettings::instance()->setLogFileLastPath(strFilePathName);
 
-			m_fileLogFile.setFileName(strFilePathName);
-			if (!m_fileLogFile.open(QIODevice::WriteOnly)) {
+			if (!m_logFile.openLogFile(strFilePathName, QIODevice::WriteOnly)) {
 				QMessageBox::warning(this, tr("Opening Log File"), tr("Error: Couldn't open Log File \"%1\" for writing.").arg(strFilePathName));
 				// Note: Even though the above 'if' will guard against re-entrancy if
 				//	we were to just call setChecked here directly, we must do this on
@@ -191,9 +190,8 @@ void CMainWindow::en_writeLogFile(bool bOpen)
 				QTimer::singleShot(1, m_pWriteLogFileAction, [this](){ m_pWriteLogFileAction->setChecked(false); });
 				return;
 			}
-			m_pLogFile.reset(new QTextStream(static_cast<QIODevice *>(&m_fileLogFile)));
 
-			m_timerLogFile.restart();
+			m_logFile.resetTimer();
 		} else {
 			// Note: Even though the above 'if' will guard against re-entrancy if
 			//	we were to just call setChecked here directly, we must do this on
@@ -204,17 +202,14 @@ void CMainWindow::en_writeLogFile(bool bOpen)
 		}
 	} else {
 		// Close log file:
-		m_pLogFile.reset();
-		m_fileLogFile.close();
+		m_logFile.closeLogFile();
 	}
 }
 
 void CMainWindow::writeLogString(SPORT_ID_ENUM nSport, const QString &strLogString)
 {
-	if (!m_pLogFile.isNull() && m_pLogFile->device()->isOpen() && m_pLogFile->device()->isWritable()) {
-		QStringList lstLogData;
-		double nElapsedTime = static_cast<double>(m_timerLogFile.nsecsElapsed())/1000000.0;
-		(*m_pLogFile) << QString("%1").arg(nElapsedTime, 0, 'f', 4) << ": " << QString::number(nSport+1) << ": " << strLogString << Qt::endl;
+	if (m_logFile.isWritable()) {
+		m_logFile.writeLogString(QString::number(nSport+1) + ": " + strLogString);
 	}
 }
 
