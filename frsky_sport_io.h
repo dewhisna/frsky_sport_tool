@@ -266,7 +266,7 @@ public:
 
 	bool isTelemetryPacket() const
 	{
-		if ((m_size == sizeof(CSportTelemetryPacket)) &&
+		if ((m_size == (sizeof(CSportTelemetryPacket)+1)) &&
 			(m_sportTelemetry.m_primId == PRIM_ID_DATA_FRAME))
 			return true;
 		return false;
@@ -274,7 +274,7 @@ public:
 
 	bool isFirmwarePacket() const
 	{
-		if ((m_size == sizeof(CSportFirmwarePacket)) &&
+		if ((m_size == (sizeof(CSportFirmwarePacket)+1)) &&
 			(m_sportFirmware.m_primId == PRIM_ID_FIRMWARE_FRAME))
 			return true;
 		return false;
