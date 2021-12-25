@@ -90,18 +90,27 @@ void CFrskySportDeviceEmu::nextState()
 			//	device, we could limit the time in this state
 			//	with a timeout that transitions us back to
 			//	idle or poll mode (if we are a receiver)
+			if (m_pUICallback) {
+				m_pUICallback->setProgressText(tr("Waiting for FlashMode Request..."));
+			}
 			break;
 
 		case SPORT_FLASHMODE_ACK:
 			// Send response for FlashMode Request
 			m_state = SPORT_VERSION_REQ;
 			sendFirmwareFrame(CSportFirmwarePacket(PRIM_ACK_FLASHMODE, (uint32_t)0, 0, true));
+			if (m_pUICallback) {
+				m_pUICallback->setProgressText(tr("Received FlashMode Request, Sending Acknowledge..."));
+			}
 			break;
 
 		case SPORT_VERSION_REQ:
 			// Here, we are waiting for an incoming version
 			//	request after acknowledging flash mode.
 			//	There's nothing to do here.
+			if (m_pUICallback) {
+				m_pUICallback->setProgressText(tr("Waiting for Version Request or Download/Upload Start..."));
+			}
 			break;
 
 		case SPORT_VERSION_ACK:
@@ -109,6 +118,9 @@ void CFrskySportDeviceEmu::nextState()
 			//	in this state until we get a command to
 			//	upload or download
 			sendFirmwareFrame(CSportFirmwarePacket(PRIM_ACK_VERSION, m_nVersionInfo, 0, true));
+			if (m_pUICallback) {
+				m_pUICallback->setProgressText(tr("Received Version Request, Sending Version and Waiting for Download/Upload Start..."));
+			}
 			break;
 
 		case SPORT_USER_ABORT:
@@ -126,6 +138,9 @@ void CFrskySportDeviceEmu::nextState()
 			m_bFirmwareRxMode = true;				// Download/Flashing mode
 			m_baRxFirmware.clear();
 			sendFirmwareFrame(CSportFirmwarePacket(PRIM_REQ_DATA_ADDR, m_nReqAddress, 0, true));
+			if (m_pUICallback) {
+				m_pUICallback->setProgressText(tr("Received Download Command, Sending Data Request..."));
+			}
 			break;
 
 		case SPORT_CMD_UPLOAD:
@@ -176,6 +191,9 @@ void CFrskySportDeviceEmu::nextState()
 			//	and we must send our end download primitive, and we're done
 			sendFirmwareFrame(CSportFirmwarePacket(PRIM_END_DOWNLOAD, (uint32_t)0, 0, true));
 			m_state = SPORT_END_EMULATION;
+			if (m_pUICallback) {
+				m_pUICallback->setProgressText(tr("Received Data EOF Message with Good Data..."));
+			}
 			break;
 
 		case SPORT_CRC_FAILURE:
@@ -183,6 +201,9 @@ void CFrskySportDeviceEmu::nextState()
 			//	CRC Error primitive and we're done:
 			sendFirmwareFrame(CSportFirmwarePacket(PRIM_DATA_CRC_ERR, (uint32_t)0, 0, true));
 			m_state = SPORT_END_EMULATION;
+			if (m_pUICallback) {
+				m_pUICallback->setProgressText(tr("Received Data EOF Message with Bad Data..."));
+			}
 			break;
 
 		case SPORT_END_EMULATION:
@@ -192,6 +213,9 @@ void CFrskySportDeviceEmu::nextState()
 			//	poll mode.  If so, we can do that here.  Otherwise, this will
 			//	automatically exit emulation mode and return blocking emulation
 			//	back to the caller to decide...
+			if (m_pUICallback) {
+				m_pUICallback->setProgressText(tr("End of Emulation..."));
+			}
 			break;
 	}
 }
