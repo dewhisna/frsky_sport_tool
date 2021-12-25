@@ -137,6 +137,7 @@ void CFrskySportDeviceEmu::nextState()
 			m_nFileAddress = 0;
 			m_bFirmwareRxMode = true;				// Download/Flashing mode
 			m_baRxFirmware.clear();
+			m_state = SPORT_DATA_TRANSFER;
 			sendFirmwareFrame(CSportFirmwarePacket(PRIM_REQ_DATA_ADDR, m_nReqAddress, 0, true), tr("Req Data, Addr=0x%1").arg(m_nReqAddress, 8, 16, QChar('0')));
 			if (m_pUICallback) {
 				m_pUICallback->setProgressText(tr("Received Download Command, Sending Data Request..."));
@@ -179,8 +180,8 @@ void CFrskySportDeviceEmu::nextState()
 			m_baRxFirmware.append((char*)m_arrDataRead, sizeof(m_arrDataRead));
 			m_nReqAddress += 4;
 			m_nFileAddress += 4;
-			sendFirmwareFrame(CSportFirmwarePacket(PRIM_REQ_DATA_ADDR, m_nReqAddress, 0, true), tr("Req Data, Addr=0x%1").arg(m_nReqAddress, 8, 16, QChar('0')));
 			m_state = SPORT_DATA_TRANSFER;
+			sendFirmwareFrame(CSportFirmwarePacket(PRIM_REQ_DATA_ADDR, m_nReqAddress, 0, true), tr("Req Data, Addr=0x%1").arg(m_nReqAddress, 8, 16, QChar('0')));
 			break;
 
 		case SPORT_DATA_TRANSFER:
