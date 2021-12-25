@@ -58,6 +58,8 @@ public:
 public slots:
 	void cancel();
 
+	void writeMessage(const QString &strMessage);
+
 signals:
 	void cancel_triggered();
 

@@ -80,7 +80,7 @@ void CCLIProgDlg::setProgressPos(int nValue)
 
 void CCLIProgDlg::setProgressText(const QString &strStatus)
 {
-	std::cerr << strStatus.toUtf8().data() << std::endl;
+	writeMessage(strStatus);
 }
 
 void CCLIProgDlg::hookCancel(QObject *pObject, const char *member)
@@ -170,6 +170,11 @@ void CCLIProgDlg::setTxDataStatusLED(bool bStatus)
 void CCLIProgDlg::cancel()
 {
 	if (canCancel()) emit cancel_triggered();
+}
+
+void CCLIProgDlg::writeMessage(const QString &strMessage)
+{
+	std::cerr << strMessage.toUtf8().data() << std::endl;
 }
 
 // ============================================================================
