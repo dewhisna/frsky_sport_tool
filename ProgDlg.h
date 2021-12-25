@@ -54,6 +54,9 @@ public:
 	virtual void setRxDataStatusLED(bool bStatus) override;		// Rx Data Status LED, On/Off or Color change
 	virtual void setTxDataStatusLED(bool bStatus) override;		// Tx Data Status LED, On/Off or Color change
 
+public slots:
+	virtual void exec() { m_dlgProgress.exec(); }
+
 private:
 	QString m_strTitle;
 	QProgressDialog m_dlgProgress;
