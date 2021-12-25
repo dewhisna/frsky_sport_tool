@@ -449,8 +449,8 @@ void CFrskySportDeviceEmu::en_receive()
 			}
 			if (m_rxBuffer.haveCompletePacket()) {
 				if (!m_rxBuffer.isFirmwarePacket() && !m_rxBuffer.isTelemetryPacket()) {
-					QByteArray baUnexpected((char*)m_rxBuffer.data(), m_rxBuffer.size());
-					baUnexpected.prepend(0x7E);		// Add the 0x7E since it's eaten by the RxBuffer
+					QByteArray baUnexpected(1, 0x7E);		// Add the 0x7E since it's eaten by the RxBuffer
+					baUnexpected.append(m_rxBuffer.rawData());
 					m_frskySportIO.logMessage(CFrskySportIO::LT_RX, baUnexpected, "*** Unexpected/Unknown packet");
 				} else {
 					uint8_t nExpectedCRC = m_rxBuffer.isFirmwarePacket() ? m_rxBuffer.firmwarePacket().crc() :
@@ -464,7 +464,7 @@ void CFrskySportDeviceEmu::en_receive()
 						(nExpectedCRC != m_rxBuffer.crc()) ||
 						!procResults.m_strLogDetail.isEmpty()) {
 						QByteArray baMessage(1, 0x7E);		// Add the 0x7E since it's eaten by the RxBuffer
-						baMessage.append((char*)m_rxBuffer.data(), m_rxBuffer.size());
+						baMessage.append(m_rxBuffer.rawData());
 						QString strExtraMessage = procResults.m_strLogDetail;
 						if (nExpectedCRC != m_rxBuffer.crc()) {
 							QString strCRCError = QString("*** Expected CRC of 0x%1, Received CRC of 0x%2")

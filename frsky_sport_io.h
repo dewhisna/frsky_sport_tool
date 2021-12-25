@@ -243,11 +243,13 @@ public:
 		m_bInEscape = false;
 		m_bHaveFrameStart = false;
 		m_baExtraneous.clear();
+		m_baRaw.clear();
 	}
 
 	bool haveCompletePacket() const { return m_size >= (sizeof(CSportFirmwarePacket)+1); }	// Note: all packets are same size, so doesn't matter which sizeof() we use here.  +1 for CRC
 	uint8_t size() const { return m_size; }
 	const uint8_t *data() const { return m_data; }
+	const QByteArray &rawData() const { return m_baRaw; }
 	uint8_t crc() const
 	{
 		assert(m_size > sizeof(CSportFirmwarePacket));	// Note: all packets are same size, so doesn't matter which sizeof() we use here.
@@ -292,6 +294,7 @@ protected:
 	bool m_bInEscape = false;			// Set to true when we receive a 0x7D stuff byte
 	bool m_bHaveFrameStart = false;		// Set to true when we receive a 0x7E start byte, used so we don't capture incomplete frame before frame start
 	QByteArray m_baExtraneous;			// Extraneous received bytes
+	QByteArray m_baRaw;					// Raw message, used for logging so that we capture stuffing bytes (to be congruent with the TxBuffer logging)
 };
 
 

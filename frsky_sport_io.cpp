@@ -95,6 +95,7 @@ QByteArray CSportRxBuffer::pushByte(uint8_t byte)
 		reset();				// If so, reset our buffer for a new frame
 		m_bHaveFrameStart = true;
 	} else if (m_bHaveFrameStart) {
+		m_baRaw.append(byte);
 		if (m_size == 0) {
 			m_data[m_size++] = byte;		// The physical ID is never byte stuffed
 			m_bInEscape = false;			// m_bInEscape should already be false, but just in case
