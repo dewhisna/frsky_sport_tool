@@ -361,10 +361,6 @@ CFrskySportDeviceEmu::FrameProcessResult CFrskySportDeviceEmu::processFrame()
 	return results;
 }
 
-void CFrskySportDeviceEmu::waitState(State nNextState, uint32_t nTimeout, int nRetries)
-{
-}
-
 void CFrskySportDeviceEmu::sendFirmwareFrame(const CSportFirmwarePacket &packet, const QString &strLogDetail)
 {
 	CSportTxBuffer frameReqFlashMode;
