@@ -765,7 +765,7 @@ bool CFrskyDeviceFirmwareUpdate::readDeviceFirmware(QIODevice &firmware, bool bB
 	if (bBlocking) {
 		while ((m_state != SPORT_COMPLETE) &&
 			   (m_state != SPORT_FAIL)) {
-			QCoreApplication::processEvents();
+			QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
 			QCoreApplication::sendPostedEvents();
 		}
 		return (m_state == SPORT_COMPLETE);
