@@ -133,6 +133,7 @@ int main(int argc, char *argv[])
 
 	if (!fsm.flashDeviceFirmware(fileFirmware, bIsFrsk, true)) {
 		std::cerr << fsm.getLastError().toUtf8().data() << std::endl;
+		return -4;
 	} else {
 		std::cerr << "Programming was successful" << std::endl;
 	}
