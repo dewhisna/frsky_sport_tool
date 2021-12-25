@@ -578,6 +578,7 @@ void CFrskyDeviceFirmwareUpdate::en_receive()
 			if (m_rxBuffer.haveCompletePacket()) {
 				if (!m_rxBuffer.isFirmwarePacket() && !m_rxBuffer.isTelemetryPacket()) {
 					QByteArray baUnexpected((char*)m_rxBuffer.data(), m_rxBuffer.size());
+					baUnexpected.prepend(0x7E);		// Add the 0x7E since it's eaten by the RxBuffer
 					m_frskySportIO.logMessage(CFrskySportIO::LT_RX, baUnexpected, "*** Unexpected/Unknown packet");
 				} else {
 					uint8_t nExpectedCRC = m_rxBuffer.isFirmwarePacket() ? m_rxBuffer.firmwarePacket().crc() :
