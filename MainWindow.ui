@@ -34,7 +34,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Frsky Sport Tool</string>
   </property>
   <widget class="QMenuBar" name="menuBar"/>
   <widget class="QWidget" name="centralWidget"/>
