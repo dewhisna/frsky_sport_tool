@@ -127,8 +127,7 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 				if (m_pUICallback) {
 					// Display Version Information to user and
 					//	prompt for continuation:
-					QString strPrompt;
-					strPrompt.asprintf("Firmware V%2.2x.%2.2x, Hardware V%2.2x.%2.2x",
+					QString strPrompt = QString::asprintf("Firmware V%2.2x.%2.2x, Hardware V%2.2x.%2.2x",
 										((m_nVersionInfo >> 24) & 0xFF),
 										((m_nVersionInfo >> 16) & 0xFF),
 										((m_nVersionInfo >> 8) & 0xFF),
