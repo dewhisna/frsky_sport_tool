@@ -151,10 +151,15 @@ protected slots:
 	void nextState();						// State machine drive logic
 
 protected:
-	bool processFrame();					// Process the current frame in m_rxBuffer
+	struct FrameProcessResult				// Result from processFrame()
+	{
+		bool m_bAdvanceState = false;		// If true, then call nextState to advance state-machine
+		QString m_strLogDetail;				// Additional log file detail to add to message being processed
+	};
+	FrameProcessResult processFrame();		// Process the current frame in m_rxBuffer
 	void waitState(State nNextState, uint32_t nTimeout, int nRetries);	// wait for specified state for nRetries, with nTimeout time between tries
-	void sendFirmwareFrame(const CSportFirmwarePacket &packet);		// Transmit frame with specified packet on bus
-	void sendTelemetryFrame(const CSportTelemetryPacket &packet);	// Transmit frame with specified packet on bus
+	void sendFirmwareFrame(const CSportFirmwarePacket &packet, const QString &strLogDetail = QString());	// Transmit frame with specified packet on bus
+	void sendTelemetryFrame(const CSportTelemetryPacket &packet, const QString &strLogDetail = QString());	// Transmit frame with specified packet on bus
 	bool compareFirmware() const;			// Compare received firmware against original firmware file expected
 
 	void resetPollList();

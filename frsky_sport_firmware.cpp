@@ -102,7 +102,7 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 				if (bIsWaitState) {
 					waitState(SPORT_FLASHMODE_ACK, 100, 300);		// Send up to 300 times, waiting 100msec each
 				}
-				sendFrame(CSportFirmwarePacket(PRIM_REQ_FLASHMODE));
+				sendFrame(CSportFirmwarePacket(PRIM_REQ_FLASHMODE), tr("Request Flash Mode"));
 				break;
 
 			case SPORT_FLASHMODE_ACK:
@@ -119,7 +119,7 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 				if (bIsWaitState) {
 					waitState(SPORT_VERSION_ACK, 100, 10);			// Send up to 10 times, waiting 100msec each
 				}
-				sendFrame(CSportFirmwarePacket(PRIM_REQ_VERSION));
+				sendFrame(CSportFirmwarePacket(PRIM_REQ_VERSION), tr("Request Version"));
 				break;
 
 			case SPORT_VERSION_ACK:
@@ -207,7 +207,7 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 					m_pUICallback->setProgressPos(0);
 				}
 				waitState(SPORT_DATA_REQ, 2000, 1);		// Send only once, waiting up to 2sec
-				sendFrame(CSportFirmwarePacket(PRIM_CMD_DOWNLOAD));
+				sendFrame(CSportFirmwarePacket(PRIM_CMD_DOWNLOAD), tr("Command Download"));
 				break;
 
 			case SPORT_CMD_UPLOAD:
@@ -218,7 +218,7 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 				//	mode is completely experimental and we may need
 				//	to abort if something goes wrong.
 				waitState(SPORT_DATA_REQ, 2000, 1);		// Send only once, waiting up to 2sec
-				sendFrame(CSportFirmwarePacket(PRIM_CMD_UPLOAD, m_nReqAddress));		// Should this include the address or not??
+				sendFrame(CSportFirmwarePacket(PRIM_CMD_UPLOAD, m_nReqAddress), tr("Command Upload??,  Addr: 0x%1 ?").arg(m_nReqAddress, 8, 16, QChar('0')));		// Should this include the address or not??
 				break;
 
 			case SPORT_DATA_REQ:
@@ -292,7 +292,7 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 						assert(m_nFileAddress == m_nFirmwareSize);
 						m_state = SPORT_END_TRANSFER;
 						waitState(SPORT_COMPLETE, 2000, 1);		// Send only once, waiting up to 2sec
-						sendFrame(CSportFirmwarePacket(PRIM_DATA_EOF));
+						sendFrame(CSportFirmwarePacket(PRIM_DATA_EOF), tr("Data EOF"));
 						break;
 					}
 					int nBlockSize = m_pFirmware->read((char*)arrFirmwareBlock, sizeof(arrFirmwareBlock));
@@ -312,7 +312,11 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 				m_state = SPORT_DATA_TRANSFER;
 				waitState(SPORT_DATA_REQ, 2000, 1);		// Send only once, waiting up to 2sec
 				sendFrame(CSportFirmwarePacket(PRIM_DATA_WORD, &arrFirmwareBlock[m_nReqAddress & 0x3FF],
-							m_nReqAddress & 0xFF));
+							m_nReqAddress & 0xFF), tr("Data Xfer: %1.%2.%3.%4")
+							.arg(arrFirmwareBlock[(m_nReqAddress & 0x3FF)+0], 2, 16, QChar('0'))
+							.arg(arrFirmwareBlock[(m_nReqAddress & 0x3FF)+1], 2, 16, QChar('0'))
+							.arg(arrFirmwareBlock[(m_nReqAddress & 0x3FF)+2], 2, 16, QChar('0'))
+							.arg(arrFirmwareBlock[(m_nReqAddress & 0x3FF)+3], 2, 16, QChar('0')));
 				break;
 
 			case SPORT_DATA_AVAIL:
@@ -331,7 +335,7 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 				m_nFileAddress += sizeof(m_arrDataRead);
 				m_state = SPORT_DATA_TRANSFER;
 				waitState(SPORT_DATA_AVAIL, 2000, 1);	// Send only once, waiting up to 2sec
-				sendFrame(CSportFirmwarePacket(PRIM_CMD_UPLOAD, m_nReqAddress));		// ??? Do we use PRIM_CMD_UPLOAD here or PRIM_DATA_WORD ???
+				sendFrame(CSportFirmwarePacket(PRIM_CMD_UPLOAD, m_nReqAddress), tr("Req Data, Addr=0x%1").arg(m_nReqAddress, 8, 16, QChar('0')));		// ??? Do we use PRIM_CMD_UPLOAD here or PRIM_DATA_WORD ???
 				// Add CRC retry logic here so that we aren't as Minnie Mouse as FrSky's download mode?
 			}
 				break;
@@ -435,36 +439,42 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 	}
 }
 
-bool CFrskyDeviceFirmwareUpdate::processFrame()
+CFrskyDeviceFirmwareUpdate::FrameProcessResult CFrskyDeviceFirmwareUpdate::processFrame()
 {
 	assert(m_rxBuffer.haveCompletePacket() && m_rxBuffer.isFirmwarePacket());
-	bool bProcessOK = true;
+	FrameProcessResult results;
+	results.m_bAdvanceState = false;
 
 	if ((m_rxBuffer.firmwarePacket().m_physicalId == PHYS_ID_FIRMRSP) &&
 		(m_rxBuffer.firmwarePacket().m_primId == PRIM_ID_FIRMWARE_FRAME)) {
 		switch (m_rxBuffer.firmwarePacket().m_cmd) {
 			case PRIM_ACK_FLASHMODE:		// Device ACK Flash Mode and is present
+				results.m_strLogDetail = tr("Flash Mode ACK");
 				if (m_state == SPORT_FLASHMODE_REQ) {
 					m_state = SPORT_FLASHMODE_ACK;
-					nextState();
+					results.m_bAdvanceState = true;
 				}
 				break;
 
 			case PRIM_ACK_VERSION:			// Device ACK Version Request
+				results.m_strLogDetail = tr("Version ACK");
 				if (m_state == SPORT_VERSION_REQ) {
 					m_nVersionInfo = m_rxBuffer.firmwarePacket().dataValue();
 					m_state = SPORT_VERSION_ACK;
-					nextState();
+					results.m_strLogDetail += tr(" : Version=0x%1").arg(m_nVersionInfo, 8, 16, QChar('0'));
+					results.m_bAdvanceState = true;
 				}
 				break;
 
 			case PRIM_REQ_DATA_ADDR:		// Device requests specific file address from firmware image
+				results.m_strLogDetail = tr("Req Data");
 				if ((m_state == SPORT_CMD_DOWNLOAD) ||			// Either initial command download
 					(m_state == SPORT_CMD_UPLOAD) ||			//	or initial command upload
 					(m_state == SPORT_DATA_TRANSFER)) {			//	or ongoing data transfer
 					switch (m_runmode) {
 						case FSM_RM_FLASH_PROGRAM:
 							m_nReqAddress = m_rxBuffer.firmwarePacket().dataValue();
+							results.m_strLogDetail += tr(", Addr=0x%1").arg(m_nReqAddress, 8, 16, QChar('0'));
 							m_state = SPORT_DATA_REQ;
 							break;
 						case FSM_RM_FLASH_READ:
@@ -472,37 +482,44 @@ bool CFrskyDeviceFirmwareUpdate::processFrame()
 							m_arrDataRead[1] = m_rxBuffer.firmwarePacket().m_data[1];
 							m_arrDataRead[2] = m_rxBuffer.firmwarePacket().m_data[2];
 							m_arrDataRead[3] = m_rxBuffer.firmwarePacket().m_data[3];
+							results.m_strLogDetail += tr(", Data Xfer: %1.%2.%3.%4")
+									.arg(m_arrDataRead[0], 2, 16, QChar('0'))
+									.arg(m_arrDataRead[1], 2, 16, QChar('0'))
+									.arg(m_arrDataRead[2], 2, 16, QChar('0'))
+									.arg(m_arrDataRead[3], 2, 16, QChar('0'));
 							m_state = SPORT_DATA_AVAIL;
 							break;
 						default:
 							assert(false);
 							break;
 					}
-					nextState();
+					results.m_bAdvanceState = true;
 				}
 				break;
 
 			case PRIM_END_DOWNLOAD:			// Device reports end-of-download (complete)
+				results.m_strLogDetail = tr("End Download");
 				m_state = SPORT_COMPLETE;
-				nextState();
+				results.m_bAdvanceState = true;
 				break;
 
 			case PRIM_DATA_CRC_ERR:			// Device reports CRC failure
+				results.m_strLogDetail = tr("Data Error Response (CRC?)");
 				m_state = SPORT_CRC_FAILURE;
-				nextState();
+				results.m_bAdvanceState = true;
 				break;
 
 			default:
-				bProcessOK = false;			// Report that we don't understand the message so it can be logged as unexpected
+				results.m_strLogDetail = tr("*** Unexpected/Unknown Firmware Packet");
 				break;
 
 			// What about flash erase or write failures?  There seems
 			//	to be no way for the device to notify us of that...
 			//	Unless the "CRC ERR" is really any error and not CRC-only...
 		}
-	}
+	}	// Ignore others, as they are probably just our echos
 
-	return bProcessOK;
+	return results;
 }
 
 void CFrskyDeviceFirmwareUpdate::waitState(State nNextState, uint32_t nTimeout, int nRetries)
@@ -516,7 +533,7 @@ void CFrskyDeviceFirmwareUpdate::waitState(State nNextState, uint32_t nTimeout, 
 	}
 }
 
-void CFrskyDeviceFirmwareUpdate::sendFrame(const CSportFirmwarePacket &packet)
+void CFrskyDeviceFirmwareUpdate::sendFrame(const CSportFirmwarePacket &packet, const QString &strLogDetail)
 {
 	CSportTxBuffer frameReqFlashMode;
 	frameReqFlashMode.pushFirmwarePacketWithByteStuffing(packet);
@@ -524,7 +541,7 @@ void CFrskyDeviceFirmwareUpdate::sendFrame(const CSportFirmwarePacket &packet)
 	QByteArray arrBytes;
 	arrBytes.append(0x7E);			// Start of Frame
 	arrBytes.append(frameReqFlashMode.data());
-	m_frskySportIO.logMessage(CFrskySportIO::LT_TX, arrBytes);
+	m_frskySportIO.logMessage(CFrskySportIO::LT_TX, arrBytes, strLogDetail);
 	m_frskySportIO.port().write(arrBytes);
 	m_frskySportIO.port().flush();
 }
@@ -584,18 +601,16 @@ void CFrskyDeviceFirmwareUpdate::en_receive()
 															m_rxBuffer.telemetryPacket().crc();
 					bool bIsEcho = m_rxBuffer.isFirmwarePacket() && (m_rxBuffer.firmwarePacket().m_physicalId == PHYS_ID_FIRMCMD);
 
-					bool bProcessOK = true;
-					if (m_rxBuffer.isFirmwarePacket()) bProcessOK = processFrame();		// Process only firmware packets
+					FrameProcessResult procResults;
+					if (m_rxBuffer.isFirmwarePacket()) procResults = processFrame();		// Process only firmware packets
 
 					if (CPersistentSettings::instance()->getFirmwareLogTxEchos() ||
 						(!CPersistentSettings::instance()->getFirmwareLogTxEchos() && !bIsEcho) ||
-						!bProcessOK) {
+						(nExpectedCRC != m_rxBuffer.crc()) ||
+						!procResults.m_strLogDetail.isEmpty()) {
 						QByteArray baMessage(1, 0x7E);		// Add the 0x7E since it's eaten by the RxBuffer
 						baMessage.append((char*)m_rxBuffer.data(), m_rxBuffer.size());
-						QString strExtraMessage;
-						if (!bProcessOK) {
-							strExtraMessage = "*** Unexpected Firmware Message";
-						}
+						QString strExtraMessage = procResults.m_strLogDetail;
 						if (nExpectedCRC != m_rxBuffer.crc()) {
 							QString strCRCError = QString("*** Expected CRC of 0x%1, Received CRC of 0x%2")
 										.arg(QString("%1").arg(nExpectedCRC, 2, 16, QChar('0')).toUpper(),
@@ -605,6 +620,8 @@ void CFrskyDeviceFirmwareUpdate::en_receive()
 						}
 						m_frskySportIO.logMessage(bIsEcho ? CFrskySportIO::LT_TXECHO : CFrskySportIO::LT_RX, baMessage, strExtraMessage);
 					}
+
+					if (procResults.m_bAdvanceState) nextState();
 				}
 
 				m_rxBuffer.reset();
