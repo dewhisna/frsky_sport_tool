@@ -389,9 +389,38 @@ void CFrskySportDeviceEmu::sendTelemetryFrame(const CSportTelemetryPacket &packe
 
 bool CFrskySportDeviceEmu::compareFirmware() const
 {
-	// TODO : Complete
+	bool bSame = true;
 
-	return true;
+	if (!m_pFirmware.isNull() && m_pFirmware->isOpen() && m_pFirmware->isReadable()) {
+		if (m_baRxFirmware.size() != m_nFirmwareSize) {
+			if (m_pUICallback) {
+				m_pUICallback->setProgressText(tr("Firmware Size Mismatch... Expecting: %1, Received: %2").arg(m_nFirmwareSize).arg(m_baRxFirmware.size()));
+			}
+			bSame = false;
+		} else {
+			QByteArray baSource = m_pFirmware->readAll();
+			for (int i = 0; i < baSource.size(); ++i) {
+				if (i >= m_baRxFirmware.size()) {
+					// Should never happen unless something went wrong ... but
+					bSame = false;
+					break;
+				}
+				if (baSource.at(i) != m_baRxFirmware.at(i)) {
+					if (m_pUICallback) {
+						m_pUICallback->setProgressText(tr("Source firmware doesn't match received firmware!..."));
+					}
+					bSame = false;
+					break;
+				}
+			}
+		}
+	} else {
+		if (m_pUICallback) {
+			m_pUICallback->setProgressText(tr("No source firmware file, skipping compare..."));
+		}
+	}
+
+	return bSame;
 }
 
 void CFrskySportDeviceEmu::resetPollList()
