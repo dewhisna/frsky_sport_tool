@@ -80,16 +80,16 @@ BTN_TYPE CProgDlg::promptUser(PROMPT_TYPE nPromptType,
 	if (isInteractive()) {
 		switch (nPromptType) {
 			case PT_CRITICAL:
-				return QMessageBox::critical(&m_dlgProgress, m_strTitle, strText, nButtons, nDefaultButton);
+				return QMessageBox::critical(&m_dlgProgress, m_strTitle, strText, QMessageBox::StandardButtons(nButtons), QMessageBox::StandardButton(nDefaultButton));
 
 			case PT_INFORMATION:
-				return QMessageBox::information(&m_dlgProgress, m_strTitle, strText, nButtons, nDefaultButton);
+				return QMessageBox::information(&m_dlgProgress, m_strTitle, strText, QMessageBox::StandardButtons(nButtons), QMessageBox::StandardButton(nDefaultButton));
 
 			case PT_QUESTION:
-				return QMessageBox::question(&m_dlgProgress, m_strTitle, strText, nButtons, nDefaultButton);
+				return QMessageBox::question(&m_dlgProgress, m_strTitle, strText, QMessageBox::StandardButtons(nButtons), QMessageBox::StandardButton(nDefaultButton));
 
 			case PT_WARNING:
-				return QMessageBox::warning(&m_dlgProgress, m_strTitle, strText, nButtons, nDefaultButton);
+				return QMessageBox::warning(&m_dlgProgress, m_strTitle, strText, QMessageBox::StandardButtons(nButtons), QMessageBox::StandardButton(nDefaultButton));
 		}
 	}
 
