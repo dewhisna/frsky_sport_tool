@@ -50,7 +50,6 @@ set(frsky_sport_tool_SOURCES
 	../frsky_sport_io.cpp
 	../frsky_sport_firmware.cpp
 	../crc.cpp
-	${CMAKE_BINARY_DIR}/version.cpp
 )
 
 set(frsky_sport_tool_HEADERS
@@ -75,6 +74,7 @@ add_executable(frsky_firmware_flash
 
 target_link_libraries(frsky_firmware_flash PRIVATE
 	${QT_LINK_LIBS}
+	VersionInfoLib
 )
 
 target_include_directories(frsky_firmware_flash PRIVATE ..)

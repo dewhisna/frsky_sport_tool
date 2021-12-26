@@ -58,6 +58,12 @@ add_custom_target(VersionInfo ALL
 				${CMAKE_BINARY_DIR}/_version.cpp
 )
 
+add_library(VersionInfoLib STATIC
+	${CMAKE_BINARY_DIR}/version.cpp
+)
+
+add_dependencies(VersionInfoLib VersionInfo)
+
 # -----------------------------------------------------------------------------
 
 set(frsky_sport_tool_SOURCES
@@ -111,10 +117,9 @@ add_executable(frsky_sport_tool ${GUI_TYPE}
 	${frsky_sport_tool_RESOURCES}
 )
 
-add_dependencies(frsky_sport_tool VersionInfo)
-
 target_link_libraries(frsky_sport_tool PRIVATE
 	${QT_LINK_LIBS}
+	VersionInfoLib
 )
 
 add_subdirectory(frsky_firmware_flash)
