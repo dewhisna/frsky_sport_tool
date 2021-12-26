@@ -40,8 +40,11 @@ uint8_t CSportTelemetryPacket::crc() const
 
 uint8_t CSportFirmwarePacket::crc() const
 {
-	// Yes, they are only sending the low-byte of the 16-bit CRC
-	return crc16(CRC_1021, &m_raw[1], sizeof(m_raw)-1);		// no CRC on 1st byte (physicalId)
+	uint16_t nCRC = crc16(CRC_1021, &m_raw[1], sizeof(m_raw)-1);		// no CRC of 1st byte itself (physicalId)
+
+	// Note: PHYS_ID_FIRMCMD uses the low-byte of the 16-bit CRC,
+	//			PHYS_ID_FIRMRSP uses the high-byte of the 16-bit CRC
+	return (m_physicalId == PHYS_ID_FIRMCMD) ? (nCRC & 0xFF) : ((nCRC >> 8) & 0xFF);
 }
 
 // ============================================================================
