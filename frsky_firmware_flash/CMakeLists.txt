@@ -43,6 +43,7 @@ set(QT_LINK_LIBS
 
 set(frsky_sport_tool_SOURCES
 	frsky_firmware_flash.cpp
+	../LogFile.cpp
 	../CLIProgDlg.cpp
 	../myio.cpp
 	../PersistentSettings.cpp
@@ -53,6 +54,7 @@ set(frsky_sport_tool_SOURCES
 )
 
 set(frsky_sport_tool_HEADERS
+	../LogFile.h
 	../CLIProgDlg.h
 	../myio.h
 	../defs.h

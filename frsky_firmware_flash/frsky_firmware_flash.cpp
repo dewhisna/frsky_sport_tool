@@ -26,6 +26,7 @@
 #include <QFile>
 #include <QFileInfo>
 
+#include <LogFile.h>
 #include <frsky_sport_io.h>
 #include <frsky_sport_firmware.h>
 #include <CLIProgDlg.h>
@@ -59,6 +60,7 @@ int main(int argc, char *argv[])
 	CPersistentSettings::instance()->loadSettings();
 
 	QString strFirmware;
+	QString strLogFile;
 	SPORT_ID_ENUM nSport = CPersistentSettings::instance()->getFirmwareSportPort();
 	QString strPort = CPersistentSettings::instance()->getDeviceSerialPort(nSport);
 	bool bHavePortNameSetting =!strPort.isEmpty();
@@ -89,6 +91,13 @@ int main(int argc, char *argv[])
 			} else {
 				nBaudRate = strtoul(strArg.mid(2).toUtf8().data(), nullptr, 0);
 			}
+		} else if (strArg.startsWith("-l")) {
+			if ((strArg == "-l") && (argc > ndx+1)) {
+				strLogFile = argv[ndx+1];
+				++ndx;
+			} else {
+				strLogFile = strArg.mid(2);
+			}
 		} else if (strArg == "-i") {
 			bInteractive = true;
 		} else {
@@ -101,14 +110,15 @@ int main(int argc, char *argv[])
 		std::cerr << "Frsky Firmware Flash Programming Tool" << std::endl;
 		std::cerr << "Version: " << strVersion.toUtf8().data() << std::endl;
 		if (bHavePortNameSetting) {
-			std::cerr << "Usage: frsky_firmware_flash [-b <baudrate>] [-i] <firmware-filename> [<port>]" << std::endl;
+			std::cerr << "Usage: frsky_firmware_flash [-b <baudrate>] [-l <logfile>] [-i] <firmware-filename> [<port>]" << std::endl;
 		} else {
-			std::cerr << "Usage: frsky_firmware_flash [-b <baudrate>] [-i] <firmware-filename> <port>" << std::endl;
+			std::cerr << "Usage: frsky_firmware_flash [-b <baudrate>] [-l <logfile>] [-i] <firmware-filename> <port>" << std::endl;
 		}
 		std::cerr << std::endl;
 		std::cerr << "Where:" << std::endl;
 		std::cerr << "    -b <baudrate> = optional baud-rate specifier" << std::endl;
 		std::cerr << "                    (if omitted, will use the current setting of " << CPersistentSettings::instance()->getDeviceBaudRate(nSport) << ")" << std::endl;
+		std::cerr << "    -l <logfile>  = optional communications log file to generate" << std::endl;
 		std::cerr << "    -i = interactive mode, enables prompts" << std::endl;
 		std::cerr << "    <firmware-filename> = File name/path to firmware file" << std::endl;
 		std::cerr << "    <port> = Serial Port to use" << std::endl;
@@ -125,6 +135,10 @@ int main(int argc, char *argv[])
 	if (bInteractive) std::cerr << "Interactive Mode" << std::endl;
 	std::cerr << "Serial Port: " << strPort.toUtf8().data() << std::endl;
 	std::cerr << "Baud Rate: " << nBaudRate << std::endl;
+	if (!strLogFile.isEmpty()) {
+		std::cerr << "Log File: " << strLogFile.toUtf8().data() << std::endl;
+	}
+	std::cerr << "Firmware File: " << strFirmware.toUtf8().data() << std::endl;
 
 	CFrskySportIO sport(nSport);
 	if (!sport.openPort(strPort, nBaudRate)) {
@@ -142,6 +156,20 @@ int main(int argc, char *argv[])
 	QFileInfo fiFirmware(fileFirmware);
 	bool bIsFrsk = (fiFirmware.suffix().compare("frsk", Qt::CaseInsensitive) == 0);
 
+	CLogFile logFile;
+	if (!strLogFile.isEmpty()) {
+		if (!logFile.openLogFile(strLogFile, QIODevice::WriteOnly)) {
+			std::cerr << "Failed to open \"" << strLogFile.toUtf8().data() << "\" for writing" << std::endl;
+			std::cerr << logFile.getLastError().toUtf8().data() << std::endl;
+			return -4;
+		}
+		QObject::connect(&sport, &CFrskySportIO::writeLogString, &sport,
+							[&logFile](SPORT_ID_ENUM nSport, const QString &strMessage)->void {
+								Q_UNUSED(nSport);
+								logFile.writeLogString(strMessage);
+							});
+	}
+
 	CCLIProgDlg dlgProg;
 	CFrskyDeviceFirmwareUpdate fsm(sport, &dlgProg);
 
@@ -149,7 +177,7 @@ int main(int argc, char *argv[])
 
 	if (!fsm.flashDeviceFirmware(fileFirmware, bIsFrsk, true)) {
 		std::cerr << fsm.getLastError().toUtf8().data() << std::endl;
-		return -4;
+		return -5;
 	} else {
 		std::cerr << "Programming was successful" << std::endl;
 	}
