@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=frsky_sport_tool
+Exec=frsky_sport_tool
+Icon=frsky_sport_tool4
+Comment=Frsky Sport Tool Suite
+Terminal=false
+Categories=Utility;

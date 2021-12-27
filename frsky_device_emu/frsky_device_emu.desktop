@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=frsky_device_emu
+Exec=frsky_device_emu
+Icon=frsky_device_emu
+Comment=Frsky Sport Device Emulator Tool
+Terminal=true
+Categories=Utility;

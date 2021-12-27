@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=frsky_firmware_flash
+Exec=frsky_firmware_flash
+Icon=frsky_firmware_flash
+Comment=Frsky Sport Firmware Flash Tool
+Terminal=true
+Categories=Utility;
