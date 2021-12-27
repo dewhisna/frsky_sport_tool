@@ -1,0 +1,42 @@
+{
+  "builders": [{
+    "type": "docker",
+    "image": "ubuntu:18.04",
+    "commit": true,
+    "changes": [
+      "USER root",
+      "WORKDIR /home/ubuntu",
+      "LABEL version={{isotime \"200601021504\"}} description=FrskySportToolAppImage",
+      "ONBUILD RUN date",
+      "CMD [\"\"]",
+      "ENTRYPOINT [\"/bin/sh\", \"-c\"]"
+    ]
+  }],
+  "provisioners": [
+    {
+      "type": "shell",
+      "script": "ubuntu_update.sh"
+    },
+    {
+      "type": "shell",
+      "script": "docker_build_x86_64_appimage.sh"
+    },
+    {
+      "type": "file",
+      "source": "/home/ubuntu/frsky_sport_tool.AppImage.zip",
+      "destination": "./",
+      "direction": "download"
+    }
+  ],
+  "post-processors": [
+    {
+      "type": "docker-tag",
+      "repository": "localhost:5000/dewtronics/frsky_sport_tool_appimage",
+      "tags": [
+        "latest"
+      ],
+      "force": true
+    }
+  ]
+}
+
