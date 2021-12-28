@@ -28,7 +28,7 @@ echo $USER:U6aMy0wojraho | chpasswd -e
 # Install Dependencies:
 # ---------------------
 apt-get update
-apt-get install -y software-properties-common
+apt-get install -y software-properties-common apt-utils
 #sed -i '/^#\s*deb-src /s/^#\s*//' "/etc/apt/sources.list"
 apt-get install -y build-essential
 apt-get install -y pkg-config
