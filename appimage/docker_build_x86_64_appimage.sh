@@ -125,7 +125,7 @@ make -j 4
 # ----------------
 # Export Version:
 cd $PROJECT_DIR/frsky_sport_tool/
-export VERSION=`git describe --always --dirty=+`
+export VERSION=`git describe --always --tags --dirty=+`
 # Stage Build Area:
 mkdir -p $PROJECT_DIR/appimage/frsky_firmware_flash
 mkdir -p $PROJECT_DIR/appimage/frsky_device_emu
