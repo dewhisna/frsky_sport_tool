@@ -187,6 +187,10 @@ bool CFrskySportIO::openPort(const QString &strSerialPort, int nBaudRate, int nD
 			return false;
 	}
 	if (nDataBits == 0) nDataBits = CPersistentSettings::instance()->getDeviceDataBits(m_nSportID);
+	if ((nDataBits < 5) || (nDataBits > 8)) {
+		m_strLastError = tr("Invalid Data Bits Setting");
+		return false;
+	}
 	m_serialPort.setDataBits(static_cast<QSerialPort::DataBits>(nDataBits));
 	if (nStopBits == 0) nStopBits = CPersistentSettings::instance()->getDeviceStopBits(m_nSportID);
 	switch (nStopBits) {
