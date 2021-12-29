@@ -273,7 +273,7 @@ CFrskySportDeviceEmu::FrameProcessResult CFrskySportDeviceEmu::processFrame()
 						results.m_strLogDetail += QString("  Addr: 0x%1 ?").arg(m_nReqAddress, 8, 16, QChar('0'));
 						if (m_pFirmware.isNull()) {
 							emuError(tr("Upload Command without emulator firmware file content"));
-							results.m_strLogDetail += tr("  *** Fail: Don't have firmware file content");
+							results.m_strLogDetail += tr("  *** Fail: Don't have source firmware file content");
 							m_state = SPORT_CRC_FAILURE;		// If upload is requested without a firmware, report error.  Is this the best error mechanism?
 						} else {
 							m_state = SPORT_CMD_UPLOAD;
@@ -575,16 +575,21 @@ bool CFrskySportDeviceEmu::setFirmware(QIODevice &firmware, bool bIsFRSKFile)
 		return false;
 	}
 
-	m_pFirmware = &firmware;
+	m_pFirmware.clear();
 	m_nFirmwareSize = 0;
 	m_nFileAddress = 0;
 
-	if (firmware.isOpen() && firmware.isReadable()) {
-		m_nFirmwareSize = firmware.size();		// So that this will work with random-access files and serial streams too, read size once, since streams is bytesAvailable, not overall size
+	if (firmware.isSequential()) {
+		emuError(tr("Emulator only works with random-access firmware sources"));
+		return false;
+	}
 
-		if ((m_nFirmwareSize == 0) ||
-			(bIsFRSKFile && (static_cast<size_t>(m_nFirmwareSize) <= sizeof(FrSkyFirmwareInformation)))) {
-			emuError(tr("File is Empty"));
+	if (firmware.isOpen() && firmware.isReadable()) {
+		qint64 nFirmwareSize = firmware.size();		// Size should always work here since we require source firmware to be random access
+
+		if ((nFirmwareSize == 0) ||
+			(bIsFRSKFile && (static_cast<size_t>(nFirmwareSize) <= sizeof(FrSkyFirmwareInformation)))) {
+			emuError(tr("Source Firmware File is Empty"));
 			return false;
 		}
 
@@ -594,7 +599,7 @@ bool CFrskySportDeviceEmu::setFirmware(QIODevice &firmware, bool bIsFRSKFile)
 			int nReadSize = firmware.read((char *)&header, sizeof(header));
 			if ((nReadSize < 0) ||
 				(static_cast<size_t>(nReadSize) != sizeof(FrSkyFirmwareInformation))) {
-				emuError(tr("Failed to Read Firmware Header from File"));
+				emuError(tr("Failed to Read Source Firmware File Header"));
 				return false;
 			}
 			if ((header.headerVersion != 1) ||
@@ -606,13 +611,20 @@ bool CFrskySportDeviceEmu::setFirmware(QIODevice &firmware, bool bIsFRSKFile)
 				return false;
 			}
 
-			if (m_nFirmwareSize != (sizeof(FrSkyFirmwareInformation) + header.size)) {
-				emuError(tr("Wrong firmware file size"));
+			if (nFirmwareSize < static_cast<qint64>(sizeof(FrSkyFirmwareInformation) + header.size)) {
+				emuError(tr("Wrong source firmware file size.  File doesn't match header."));
 				return false;
 			}
 
-			m_nFirmwareSize -= sizeof(FrSkyFirmwareInformation);
+			m_nFirmwareSize = header.size;
+		} else {
+			m_nFirmwareSize = nFirmwareSize;
 		}
+
+		m_pFirmware = &firmware;
+	} else {
+		emuError(tr("Source Firmware file not open or isn't readable"));
+		return false;
 	}
 
 	return true;

@@ -152,7 +152,7 @@ protected:
 	uint32_t m_nFileAddress = 0;			// Address in firmware file being read from file
 	uint32_t m_nVersionInfo = 0;			// Version information read from device
 	QPointer<QIODevice> m_pFirmware;		// Current firmware file
-	qint64 m_nFirmwareSize = 0;				// Size of firmware, used for size checking and for progress callbacks
+	qint64 m_nFirmwareSize = 0;				// Size of firmware, used for size checking and for progress callbacks, will be 0 for sequential streams that have no frsky header or will be the real size on random streams or where we have a header
 	CSportRxBuffer m_rxBuffer;				// Receive Sport Packet buffer from serial en_receive events
 	QTimer m_tmrEventTimeout;				// Current Event Timeout Timer, triggers for doing retries and state machine driving
 

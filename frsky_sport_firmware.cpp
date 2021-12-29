@@ -201,7 +201,7 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 				if (m_pUICallback) {
 					m_pUICallback->enableCancel(false);		// Once we start programming, don't let user break things by interrupting us
 
-					// Switch to deterministic mode:
+					// Switch to deterministic mode (if we have m_nFirmwareSize):
 					m_pUICallback->setProgressRange(0, (m_nFirmwareSize/FIRMWARE_BLOCK_SIZE) +
 													((m_nFirmwareSize % FIRMWARE_BLOCK_SIZE) ?  1 : 0));
 					m_pUICallback->setProgressPos(0);
@@ -282,30 +282,50 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 				assert(m_runmode == FSM_RM_FLASH_PROGRAM);		// This is the program-only transfer
 				assert(bIsWaitState);			// This should never be a retry
 				if (m_nReqAddress == m_nFileAddress) {		// See if we need to read more data from firmware file
-					if (m_pFirmware->atEnd()) {
-						// Update progress:
-						if (m_pUICallback) {
+					int nBlockSize = m_pFirmware->read((char*)arrFirmwareBlock, sizeof(arrFirmwareBlock));
+					// Handle both sequential devices and random devices and allow for
+					//		random access devices/files containing other data after the
+					//		firmware block.  Note that according to Qt docs, atEnd()
+					//		may return true on certain special sequential devices when
+					//		they aren't really atEnd().  So, we do the read above, which
+					//		should return 0 if it really is atEnd.  Or, if we know the
+					//		size of the firmware, either because of it being a random
+					//		access device or a FRSK file which has a header with the
+					//		size, then we'll use that to trigger the end for special
+					//		cases when there is data beyond the firmware data block:
+					if (((nBlockSize == 0) && m_pFirmware->atEnd()) ||
+						((m_nFirmwareSize != 0) && (m_nFileAddress == m_nFirmwareSize))) {
+						// Update progress to end:
+						if (m_pUICallback && m_nFirmwareSize) {
 							m_pUICallback->setProgressPos((m_nFirmwareSize/FIRMWARE_BLOCK_SIZE) +
 															((m_nFirmwareSize % FIRMWARE_BLOCK_SIZE) ?  1 : 0));
 						}
 
-						assert(m_nFileAddress == m_nFirmwareSize);
+						assert((m_nFirmwareSize == 0) || (m_nFileAddress == m_nFirmwareSize));
 						m_state = SPORT_END_TRANSFER;
 						waitState(SPORT_COMPLETE, 2000, 1);		// Send only once, waiting up to 2sec
 						sendFrame(CSportFirmwarePacket(PRIM_DATA_EOF), tr("Data EOF"));
 						break;
 					}
-					int nBlockSize = m_pFirmware->read((char*)arrFirmwareBlock, sizeof(arrFirmwareBlock));
+
 					if (nBlockSize < 0) {
 						m_strLastError = tr("Error reading firmware file");
 						m_state = SPORT_FAIL;
 						emit flashComplete(false);
 						return;
 					}
+
 					m_nFileAddress += nBlockSize;
+					if ((m_nFirmwareSize != 0) && (m_nFileAddress > m_nFirmwareSize)) {
+						// Truncate reads at the known firmware file size, if we know
+						//	it, such as from the FRSK header.  This allows for random
+						//	access files to have data after the firmware data block
+						//	and works equally as well for sequential streams:
+						m_nFileAddress = m_nFirmwareSize;
+					}
 
 					// Update progress:
-					if (m_pUICallback) {
+					if (m_pUICallback && m_nFirmwareSize) {
 						m_pUICallback->setProgressPos(m_nFileAddress/FIRMWARE_BLOCK_SIZE);
 					}
 				}
@@ -401,6 +421,34 @@ void CFrskyDeviceFirmwareUpdate::nextState()
 			case SPORT_CMD_DOWNLOAD:
 			case SPORT_CMD_UPLOAD:
 			case SPORT_DATA_TRANSFER:
+				// If we get here on a SPORT_DATA_TRANSFER state, it means
+				//	we timed out sending the last block without getting a
+				//	response.  Ideally, we'd ask the user if they'd like to
+				//	try and resend it in case the serial cable came loose or
+				//	something.  But we can't because the Minnie Mouse Frsky
+				//	protocol (as noted above) can't resync addresses.  There's
+				//	no way for us to know if the device received our last
+				//	frame and it was its data request for the next address
+				//	that got lost or if it never saw our last data transmission.
+				//	Therefore, if we resend the data, it could think that it's
+				//	for the next transfer that it just requested and not the
+				//	previous and put the data in the wrong memory location.
+				//	The only recourse is to do here the same thing that the
+				//	OpenTx code does, which is to just abort with a "Data
+				//	transfer refused" error and let the user start all over.
+				//	This could have been solved if they would have transferred
+				//	the address more clearly from the tool in the transfer
+				//	data.  There is at least the opportunity for the device
+				//	to rerequest some data, but it can't do out-of-band
+				//	rerequests on the same block if it doesn't get a response
+				//	from us because we timed out and didn't see a response from
+				//	it -- if it did, it would likely trample on top of our
+				//	next data transfer, since it's a single-wire half-duplex
+				//	bus topology.  So again, very Minnie Mouse.  Maybe this
+				//	is one of their reasons for moving toward F.port as a
+				//	replacement for S.port?  That is -- go full-duplex and
+				//	get rid of the signal level inversion and be a normal
+				//	serial port??  <sigh>
 				m_strLastError = tr("Data transfer refused");
 				break;
 
@@ -695,7 +743,7 @@ bool CFrskyDeviceFirmwareUpdate::flashDeviceFirmware(QIODevice &firmware, bool b
 	m_nFileAddress = 0;
 	m_nVersionInfo = 0;
 	m_pFirmware = &firmware;
-	m_nFirmwareSize = firmware.size();		// So that this will work with random-access files and serial streams too, read size once, since streams is bytesAvailable, not overall size
+	m_nFirmwareSize = (firmware.isSequential() ? 0 : firmware.size());		// Since sequential streams is bytesAvailable and not overall size, use zero for them and special case it, but read full size for random access
 	m_strLastError.clear();
 
 	if (!firmware.isOpen() || !firmware.isReadable()) {
@@ -704,8 +752,12 @@ bool CFrskyDeviceFirmwareUpdate::flashDeviceFirmware(QIODevice &firmware, bool b
 		return false;
 	}
 
-	if ((m_nFirmwareSize == 0) ||
-		(bIsFRSKFile && (static_cast<size_t>(m_nFirmwareSize) <= sizeof(FrSkyFirmwareInformation)))) {
+	// This empty-file check works for random-access files, but not
+	//	sequential.  The best we can do with sequential is see if
+	//	there's a FRSK header and make sure we can at least read that
+	//	and hope we don't run out of data during data transfer:
+	if (!firmware.isSequential() && ((m_nFirmwareSize == 0) ||
+		(bIsFRSKFile && (static_cast<size_t>(m_nFirmwareSize) <= sizeof(FrSkyFirmwareInformation))))) {
 		m_strLastError = tr("File is Empty");
 		emit flashComplete(false);
 		return false;
@@ -731,13 +783,20 @@ bool CFrskyDeviceFirmwareUpdate::flashDeviceFirmware(QIODevice &firmware, bool b
 			return false;
 		}
 
-		if (m_nFirmwareSize != (sizeof(FrSkyFirmwareInformation) + header.size)) {
-			m_strLastError = tr("Wrong firmware file size");
+		if ((m_nFirmwareSize != 0) &&
+			(m_nFirmwareSize < static_cast<qint64>(sizeof(FrSkyFirmwareInformation) + header.size))) {
+			m_strLastError = tr("Wrong firmware file size (file doesn't match FRSK header)");
 			emit flashComplete(false);
 			return false;
 		}
 
-		m_nFirmwareSize -= sizeof(FrSkyFirmwareInformation);
+		// Use the header size for the firmware size so that we have
+		//	the correct firmware size -- works for both the sequential
+		//	case (where the size is 0 to this point) or random access
+		//	case where there's data beyond the firmware data block
+		//	(which isn't currently the case for type-1 FRSK files, but
+		//	may be a future case):
+		m_nFirmwareSize = header.size;
 	}
 
 	m_state = SPORT_START;
