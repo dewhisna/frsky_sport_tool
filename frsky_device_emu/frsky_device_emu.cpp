@@ -29,6 +29,7 @@
 #include <QCoreApplication>
 #include <QFile>
 #include <QFileInfo>
+#include <QStringList>
 
 #include <iostream>
 
@@ -63,7 +64,10 @@ int main(int argc, char *argv[])
 	QString strLogFile;
 	SPORT_ID_ENUM nSport = CPersistentSettings::instance()->getFirmwareSportPort();
 	QString strPort;
-	int nBaudRate = CPersistentSettings::instance()->getDeviceBaudRate(nSport);
+	int nBaudRate = 57600;
+	int nDataBits = 8;
+	char chParity = 'N';
+	int nStopBits = 1;
 	bool bInteractive = false;
 	bool bNeedUsage = false;
 	int nArgsFound = 0;
@@ -86,6 +90,24 @@ int main(int argc, char *argv[])
 				++ndx;
 			} else {
 				nBaudRate = strtoul(strArg.mid(2).toUtf8().data(), nullptr, 0);
+			}
+		} else if (strArg.startsWith("-s")) {
+			QString strPortSettings;
+			if ((strArg == "-s") && (argc > ndx+1)) {
+				strPortSettings = argv[ndx+1];
+				++ndx;
+			} else {
+				strPortSettings = strArg.mid(2);
+			}
+			QStringList lstPortSettings = strPortSettings.split(",", Qt::KeepEmptyParts);
+			if (lstPortSettings.size() >= 1) {
+				nDataBits = strtoul(lstPortSettings.at(0).toUtf8().data(), nullptr, 0);
+			}
+			if (lstPortSettings.size() >= 2) {
+				if (lstPortSettings.at(1).size() > 0) chParity = lstPortSettings.at(1).toUpper().at(0).toLatin1();
+			}
+			if (lstPortSettings.size() >= 3) {
+				nStopBits = strtoul(lstPortSettings.at(2).toUtf8().data(), nullptr, 0);
 			}
 		} else if (strArg.startsWith("-f")) {
 			if ((strArg == "-f") && (argc > ndx+1)) {
@@ -120,21 +142,23 @@ int main(int argc, char *argv[])
 
 	if (bNeedUsage) {
 		std::cerr << "Frsky Device Emulation Tool (for testing)" << std::endl;
-		std::cerr << "Version: " << strVersion.toUtf8().data() << std::endl;
-		std::cerr << "Usage: frsky_device_emu [-b <baudrate>] [-l <logfile>] [-f <firmware-in>] [-f <firmware-out>] [-i] <port>" << std::endl;
+		std::cerr << "Version: " << strVersion.toUtf8().data() << std::endl << std::endl;
+		std::cerr << "Usage: frsky_device_emu [options] <port>" << std::endl;
 		std::cerr << std::endl;
 		std::cerr << "Where:" << std::endl;
+		std::cerr << "    <port> = Serial Port to use (required)" << std::endl;
+		std::cerr << std::endl;
+		std::cerr << "Options:" << std::endl;
 		std::cerr << "    -b <baudrate> = optional baud-rate specifier" << std::endl;
-		std::cerr << "                    (if omitted, will use the current setting of " << CPersistentSettings::instance()->getDeviceBaudRate(nSport) << ")" << std::endl;
+		std::cerr << "                    (if omitted, will use the default of 57600)" << std::endl;
+		std::cerr << "    -s <port-settings> = where port-settings is a comma separated list of" << std::endl;
+		std::cerr << "                    \"DataBit,Parity,StopBit\", such as \"8,N,1\" (which is the default)" << std::endl;
 		std::cerr << "    -l <logfile>  = optional communications log file to generate" << std::endl;
 		std::cerr << "    -f <firmware-in> = optional input firmware filename to use for comparison" << std::endl;
 		std::cerr << "                    (if omitted, will skip byte-wise checks for firmware content)" << std::endl;
 		std::cerr << "    -w <firware-out> = optional output firmware filename to write received data" << std::endl;
 		std::cerr << "                    (written firmware will always be in headerless .frk format)" << std::endl;
 		std::cerr << "    -i = interactive mode, enables prompts" << std::endl;
-		std::cerr << std::endl;
-		std::cerr << "    <firmware-filename> = File name/path to firmware file" << std::endl;
-		std::cerr << "    <port> = Serial Port to use" << std::endl;
 		std::cerr << std::endl << std::endl;
 
 		return -1;
@@ -142,9 +166,22 @@ int main(int argc, char *argv[])
 
 	std::cerr << "frsky_device_emu version: " << strVersion.toUtf8().data() << std::endl;
 
+	CFrskySportIO sport(nSport);
+	if (!sport.openPort(strPort, nBaudRate, nDataBits, chParity, nStopBits)) {
+		std::cerr << "Failed to open serial port" << std::endl;
+		std::cerr << sport.getLastError().toUtf8().data() << std::endl;
+		return -2;
+	}
+
+	QStringList lstPortSettings;
+	lstPortSettings.append(QString("%1").arg(sport.dataBits()));
+	lstPortSettings.append(QString("%1").arg(QChar(sport.parity())));
+	lstPortSettings.append(QString("%1").arg(sport.stopBits()));
+
 	if (bInteractive) std::cerr << "Interactive Mode" << std::endl;
 	std::cerr << "Serial Port: " << strPort.toUtf8().data() << std::endl;
-	std::cerr << "Baud Rate: " << nBaudRate << std::endl;
+	std::cerr << "Baud Rate: " << sport.baudRate() << std::endl;
+	std::cerr << "Port Settings: " << lstPortSettings.join(',').toUtf8().data() << std::endl;
 	if (!strLogFile.isEmpty()) {
 		std::cerr << "Log File: " << strLogFile.toUtf8().data() << std::endl;
 	}
@@ -153,13 +190,6 @@ int main(int argc, char *argv[])
 	}
 	if (!strFirmwareOut.isEmpty()) {
 		std::cerr << "Output (received) Firmware File: " << strFirmwareOut.toUtf8().data() << std::endl;
-	}
-
-	CFrskySportIO sport(nSport);
-	if (!sport.openPort(strPort, nBaudRate)) {
-		std::cerr << "Failed to open serial port" << std::endl;
-		std::cerr << sport.getLastError().toUtf8().data() << std::endl;
-		return -2;
 	}
 
 	QFile fileFirmwareIn(strFirmwareIn);
