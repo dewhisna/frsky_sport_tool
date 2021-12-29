@@ -23,6 +23,8 @@
 #include "frsky_sport_firmware.h"
 #include "UICallback.h"
 
+#include "crc.h"
+
 #include <QCoreApplication>
 
 // ============================================================================
@@ -50,7 +52,7 @@ namespace {
 		uint32_t size;
 		uint8_t productFamily;
 		uint8_t productId;
-		uint16_t crc;
+		uint16_t crc;							// This CRC is CRC-1021 format
 	});
 	static_assert((sizeof(FrSkyFirmwareInformation) == 16), "FrSkyFirmwareInformation structure sizing error");
 
@@ -58,6 +60,66 @@ namespace {
 
 	// ------------------------------------------------------------------------
 
+	struct FirmwareDescriptor {
+		int m_nID;
+		QString m_strDescription;
+	};
+
+	static const FirmwareDescriptor conarrProductFamily[] =
+	{
+		{ FIRMWARE_FAMILY_INTERNAL_MODULE, "Internal Module" },
+		{ FIRMWARE_FAMILY_EXTERNAL_MODULE, "External Module" },
+		{ FIRMWARE_FAMILY_RECEIVER, "Receiver" },
+		{ FIRMWARE_FAMILY_SENSOR, "Sensor" },
+		{ FIRMWARE_FAMILY_BLUETOOTH_CHIP, "Bluetooth Chip" },
+		{ FIRMWARE_FAMILY_POWER_MANAGEMENT_UNIT, "Power Management Unit" },
+		{ FIRMWARE_FAMILY_FLIGHT_CONTROLLER, "Flight Controller" },
+		{ -1, "Unknown" }
+	};
+
+	static const FirmwareDescriptor conarrModuleProductID[] =
+	{
+		{ FIRMWARE_ID_MODULE_NONE, "None" },
+		{ FIRMWARE_ID_MODULE_XJT, "XJT" },
+		{ FIRMWARE_ID_MODULE_ISRM, "ISRM" },
+		{ -1, "Unknown" }
+	};
+
+	static const FirmwareDescriptor conarrReceiverProductID[] =
+	{
+		{ FIRMWARE_ID_RECEIVER_NONE, "None" },
+		{ FIRMWARE_ID_RECEIVER_X8R, "X8R" },
+		{ FIRMWARE_ID_RECEIVER_RX8R, "RX8R" },
+		{ FIRMWARE_ID_RECEIVER_RX8R_PRO, "RX8R-Pro" },
+		{ FIRMWARE_ID_RECEIVER_RX6R, "RX6R" },
+		{ FIRMWARE_ID_RECEIVER_RX4R, "RX4R" },
+		{ FIRMWARE_ID_RECEIVER_G_RX8, "G-RX8" },
+		{ FIRMWARE_ID_RECEIVER_G_RX6, "G-RX6" },
+		{ FIRMWARE_ID_RECEIVER_X6R, "X6R" },
+		{ FIRMWARE_ID_RECEIVER_X4R, "X4R" },
+		{ FIRMWARE_ID_RECEIVER_X4R_SB, "X4R-SB" },
+		{ FIRMWARE_ID_RECEIVER_XSR, "XSR" },
+		{ FIRMWARE_ID_RECEIVER_XSR_M, "XSR-M" },
+		{ FIRMWARE_ID_RECEIVER_RXSR, "RXSR" },
+		{ FIRMWARE_ID_RECEIVER_S6R, "S6R" },
+		{ FIRMWARE_ID_RECEIVER_S8R, "S8R" },
+		{ FIRMWARE_ID_RECEIVER_XM, "XM" },
+		{ FIRMWARE_ID_RECEIVER_XMP, "XM+" },
+		{ FIRMWARE_ID_RECEIVER_XMR, "XMR" },
+		{ FIRMWARE_ID_RECEIVER_R9, "R9" },
+		{ FIRMWARE_ID_RECEIVER_R9_SLIM, "R9-Slim" },
+		{ FIRMWARE_ID_RECEIVER_R9_SLIMP, "R9-Slim+" },
+		{ FIRMWARE_ID_RECEIVER_R9_MINI, "R9-Mini" },
+		{ FIRMWARE_ID_RECEIVER_R9_MM, "R9-MM" },
+		{ FIRMWARE_ID_RECEIVER_R9_STAB, "R9-STAB OTA" },
+		{ FIRMWARE_ID_RECEIVER_R9_MINI_OTA, "R9-Mini OTA" },
+		{ FIRMWARE_ID_RECEIVER_R9_MM_OTA, "R9-MM OTA" },
+		{ FIRMWARE_ID_RECEIVER_R9_SLIMP_OTA, "R9-Slim+ OTA" },
+		{ FIRMWARE_ID_RECEIVER_ARCHER_X, "Archer X OTA" },
+		{ FIRMWARE_ID_RECEIVER_R9MX, "R9MX OTA" },
+		{ FIRMWARE_ID_RECEIVER_R9SX, "R9SX OTA" },
+		{ -1, "Unknown" }
+	};
 };
 
 
@@ -703,6 +765,113 @@ CFrskyDeviceFirmwareUpdate::~CFrskyDeviceFirmwareUpdate()
 
 // ----------------------------------------------------------------------------
 
+CFrskyDeviceFirmwareUpdate::TFirmwareFileContent CFrskyDeviceFirmwareUpdate::verifyFRSKFirmwareFileContent(QIODevice &firmware)
+{
+	TFirmwareFileContent ffc;
+	ffc.m_bValid = true;			// default to good
+
+	if (!firmware.isOpen() || !firmware.isReadable()) {
+		ffc.m_strLastError = tr("Firmware file not open and readable");
+		ffc.m_bValid = false;
+		return ffc;
+	}
+
+	if (firmware.isSequential()) {
+		ffc.m_strLastError = tr("Firmware check on works on random-access streams");
+		ffc.m_bValid = false;
+		return ffc;
+	}
+
+	qint64 nFileSize = firmware.size();
+	qint64 nFilePos = firmware.pos();
+
+	FrSkyFirmwareInformation header;
+	int nReadSize = firmware.read((char *)&header, sizeof(header));
+	if ((nReadSize < 0) ||
+		(static_cast<size_t>(nReadSize) != sizeof(FrSkyFirmwareInformation))) {
+		firmware.seek(nFilePos);
+		ffc.m_strLastError = tr("Failed to Read Firmware Header from File");
+		ffc.m_bValid = false;
+		return ffc;
+	}
+	if ((header.headerVersion != 1) ||
+		(header.fourcc[0] != 'F') ||
+		(header.fourcc[1] != 'R') ||
+		(header.fourcc[2] != 'S') ||
+		(header.fourcc[3] != 'K')) {
+		firmware.seek(nFilePos);
+		ffc.m_strLastError = tr("Wrong/unknown .frsk file format");
+		ffc.m_bValid = false;
+		return ffc;
+	}
+
+	if ((nFileSize != 0) &&
+		(nFileSize < static_cast<qint64>(sizeof(FrSkyFirmwareInformation) + header.size))) {
+		firmware.seek(nFilePos);
+		ffc.m_strLastError = tr("Wrong firmware file size (file doesn't match FRSK header)");
+		ffc.m_bValid = false;
+		return ffc;
+	}
+
+	uint16_t nCRC = 0;
+	QByteArray baFirmwareBlock;
+	qint64 nRemaining = header.size;
+	while (nRemaining) {
+		int nReadSize = std::min(static_cast<qint64>(FIRMWARE_BLOCK_SIZE), nRemaining);
+		baFirmwareBlock = firmware.read(nReadSize);
+		if (baFirmwareBlock.size() != nReadSize) {
+			firmware.seek(nFilePos);
+			ffc.m_strLastError = tr("Error reading firmware file");
+			ffc.m_bValid = false;
+			return ffc;
+		}
+		nCRC = crc16(CRC_1021, (const uint8_t *)baFirmwareBlock.data(), baFirmwareBlock.size(), nCRC);
+		nRemaining -= nReadSize;
+	}
+	if (nCRC != header.crc) {
+		firmware.seek(nFilePos);
+		ffc.m_strLastError = tr("Firmware file CRC doesn't match data.  File is corrupt.");
+		ffc.m_bValid = false;
+		return ffc;
+	}
+
+	firmware.seek(nFilePos);
+
+	QString strFirmwareID;
+	strFirmwareID += tr("Product Family: ");
+	const FirmwareDescriptor *pDescriptor = &conarrProductFamily[0];
+	while ((header.productFamily != pDescriptor->m_nID) && (pDescriptor->m_nID != -1)) ++pDescriptor;
+	strFirmwareID += pDescriptor->m_strDescription + "\n";
+	strFirmwareID += tr("Product ID: ");
+	switch (header.productFamily) {
+		case FIRMWARE_FAMILY_INTERNAL_MODULE:
+		case FIRMWARE_FAMILY_EXTERNAL_MODULE:
+			pDescriptor = &conarrModuleProductID[0];
+			while ((header.productId != pDescriptor->m_nID) && (pDescriptor->m_nID != -1)) ++pDescriptor;
+			strFirmwareID += pDescriptor->m_strDescription + "\n";
+			break;
+
+		case FIRMWARE_FAMILY_RECEIVER:
+			pDescriptor = &conarrReceiverProductID[0];
+			while ((header.productId != pDescriptor->m_nID) && (pDescriptor->m_nID != -1)) ++pDescriptor;
+			strFirmwareID += pDescriptor->m_strDescription + "\n";
+			break;
+
+		default:
+			strFirmwareID += "Unknown\n";
+			break;
+	}
+	strFirmwareID += tr("Version: %1.%2.%3\n").arg(header.firmwareVersionMajor).arg(header.firmwareVersionMinor).arg(header.firmwareVersionRevision);
+	strFirmwareID += tr("Size: %1 (bytes)\n").arg(header.size);
+	strFirmwareID += tr("CRC: 0x%1\n").arg(QString("%1").arg(header.crc, 4, 16, QChar('0')).toUpper());
+
+	ffc.m_strFirmwareDetail = strFirmwareID;
+
+	return ffc;
+}
+
+// ----------------------------------------------------------------------------
+
 bool CFrskyDeviceFirmwareUpdate::idDevice(bool bBlocking)
 {
 	// Reset the the state-machine, in case this function gets
@@ -765,6 +934,32 @@ bool CFrskyDeviceFirmwareUpdate::flashDeviceFirmware(QIODevice &firmware, bool b
 
 	// FRSK file will have FrSkyFirmwareInformation header:
 	if (bIsFRSKFile) {
+		// Do the verification on random-access files first, since
+		//	it will leave the file back at the start:
+		if (!firmware.isSequential()) {
+			qint64 nFilePos = firmware.pos();
+			TFirmwareFileContent ffc = verifyFRSKFirmwareFileContent(firmware);
+			assert(nFilePos == firmware.pos());		// Check verifyFRSKFirmwareFileContent().  It should return file to start position!
+			if (!ffc.m_bValid) {
+				m_strLastError = ffc.m_strLastError;
+				emit flashComplete(false);
+				return false;
+			} else if (m_pUICallback && m_pUICallback->isInteractive()) {
+				ffc.m_strFirmwareDetail.prepend(tr("FRSK Firmware File Identity:\n\n"));
+				BTN_TYPE nResult = m_pUICallback->promptUser(CUICallback::PT_QUESTION, ffc.m_strFirmwareDetail,
+																CUICallback::Ok | CUICallback::Cancel, CUICallback::Ok);
+				if (nResult != CUICallback::Ok) {
+					m_strLastError = tr("User aborted programming");
+					emit flashComplete(false);
+					return false;
+				}
+			}
+		}
+
+		// Must read/check the FRSK header itself here, even though
+		//	we just called verifyFRSKFirmwareFileContent() in
+		//	order to handle the sequential stream case correctly.
+		//	Plus we have to advance beyond the header:
 		FrSkyFirmwareInformation header;
 		int nReadSize = firmware.read((char *)&header, sizeof(header));
 		if ((nReadSize < 0) ||
@@ -778,14 +973,7 @@ bool CFrskyDeviceFirmwareUpdate::flashDeviceFirmware(QIODevice &firmware, bool b
 			(header.fourcc[1] != 'R') ||
 			(header.fourcc[2] != 'S') ||
 			(header.fourcc[3] != 'K')) {
-			m_strLastError = tr("Wrong .frsk file format");
-			emit flashComplete(false);
-			return false;
-		}
-
-		if ((m_nFirmwareSize != 0) &&
-			(m_nFirmwareSize < static_cast<qint64>(sizeof(FrSkyFirmwareInformation) + header.size))) {
-			m_strLastError = tr("Wrong firmware file size (file doesn't match FRSK header)");
+			m_strLastError = tr("Wrong/unknown .frsk file format");
 			emit flashComplete(false);
 			return false;
 		}

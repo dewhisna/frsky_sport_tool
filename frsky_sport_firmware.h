@@ -73,6 +73,26 @@ public:
 	explicit CFrskyDeviceFirmwareUpdate(CFrskySportIO &frskySportIO, CUICallback *pUICallback = nullptr, QObject *pParent = nullptr);
 	virtual ~CFrskyDeviceFirmwareUpdate();
 
+	// --------------------------------
+
+	// verifyFRSKFileContent : examines the specified FRSK file if and only
+	//					if it's a random-access file, checking its CRC and
+	//					generating content detail to prompt the user with.
+	//					Returns false (and error detail) if the file is
+	//					corrupt or an unknown FRSK format, etc.
+	//		firmware = QIODevice of filestream to example (must be random access)
+	//					and must initially be positioned at the head before
+	//					the FRSK header.  At return, it will be repositioned
+	//					to the same location.
+	struct TFirmwareFileContent {
+		bool m_bValid = true;
+		QString m_strLastError;
+		QString m_strFirmwareDetail;
+	};
+	static TFirmwareFileContent verifyFRSKFirmwareFileContent(QIODevice &firmware);
+
+	// --------------------------------
+
 	// idDevice function:  Executes FSM_RM_DEVICE_ID sequence
 	//		bBlocking : If true, this function won't return until device
 	//					ID is complete and will return completion status bool.

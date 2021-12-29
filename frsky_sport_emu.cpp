@@ -21,6 +21,7 @@
 ****************************************************************************/
 
 #include "frsky_sport_emu.h"
+#include "frsky_sport_firmware.h"
 #include "UICallback.h"
 
 #include <QCoreApplication>
@@ -595,6 +596,29 @@ bool CFrskySportDeviceEmu::setFirmware(QIODevice &firmware, bool bIsFRSKFile)
 
 		// FRSK file will have FrSkyFirmwareInformation header:
 		if (bIsFRSKFile) {
+			// Do the verification first, since it will leave the file back at the start:
+			qint64 nFilePos = firmware.pos();
+			CFrskyDeviceFirmwareUpdate::TFirmwareFileContent ffc = CFrskyDeviceFirmwareUpdate::verifyFRSKFirmwareFileContent(firmware);
+			assert(nFilePos == firmware.pos());		// Check verifyFRSKFirmwareFileContent().  It should return file to start position!
+			if (!ffc.m_bValid) {
+				emuError(ffc.m_strLastError);
+				return false;
+			} else if (m_pUICallback) {
+				ffc.m_strFirmwareDetail.prepend(tr("Source FRSK Firmware File Identity:\n"));
+
+				if (m_pUICallback->isInteractive()) {
+					BTN_TYPE nResult = m_pUICallback->promptUser(CUICallback::PT_QUESTION, ffc.m_strFirmwareDetail,
+																	CUICallback::Ok | CUICallback::Cancel, CUICallback::Ok);
+					if (nResult != CUICallback::Ok) {
+						emuError(tr("User aborted device emulation"));
+						return false;
+					}
+				} else {
+					ffc.m_strFirmwareDetail.prepend("\n");
+					m_pUICallback->setProgressText(ffc.m_strFirmwareDetail);
+				}
+			}
+
 			FrSkyFirmwareInformation header;
 			int nReadSize = firmware.read((char *)&header, sizeof(header));
 			if ((nReadSize < 0) ||
@@ -607,7 +631,7 @@ bool CFrskySportDeviceEmu::setFirmware(QIODevice &firmware, bool bIsFRSKFile)
 				(header.fourcc[1] != 'R') ||
 				(header.fourcc[2] != 'S') ||
 				(header.fourcc[3] != 'K')) {
-				emuError(tr("Wrong .frsk file format"));
+				emuError(tr("Wrong/unknown .frsk file format"));
 				return false;
 			}
 
