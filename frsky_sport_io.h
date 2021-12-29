@@ -316,6 +316,27 @@ public:
 	SPORT_ID_ENUM getSportID() const { return m_nSportID; }
 	QSerialPort &port() { return m_serialPort; }
 
+	int baudRate() const { return m_serialPort.baudRate(); }
+	int dataBits() const { return m_serialPort.dataBits(); }
+	char parity() const
+	{
+		switch (m_serialPort.parity()) {
+			case QSerialPort::NoParity:
+				return 'N';
+			case QSerialPort::OddParity:
+				return 'O';
+			case QSerialPort::EvenParity:
+				return 'E';
+			case QSerialPort::SpaceParity:
+				return 'S';
+			case QSerialPort::MarkParity:
+				return 'M';
+			default:
+				return 0;
+		}
+	}
+	int stopBits() const { return m_serialPort.stopBits(); }
+
 	bool openPort(const QString &strSerialPort = QString(), int nBaudRate = 0,
 					int nDataBits = 0, char chParity = 0, int nStopBits = 0);
 	void closePort();
