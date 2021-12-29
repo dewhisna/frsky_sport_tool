@@ -192,6 +192,9 @@ int main(int argc, char *argv[])
 		std::cerr << "Output (received) Firmware File: " << strFirmwareOut.toUtf8().data() << std::endl;
 	}
 
+	CCLIProgDlg dlgProg;
+	dlgProg.setInteractive(bInteractive);
+
 	QFile fileFirmwareIn(strFirmwareIn);
 	if (!strFirmwareIn.isEmpty() && !fileFirmwareIn.open(QIODevice::ReadOnly)) {
 		std::cerr << "Failed to open input firmware file \"" << strFirmwareIn.toUtf8().data() << "\" for reading" << std::endl;
@@ -202,12 +205,34 @@ int main(int argc, char *argv[])
 	bool bIsFrsk = (fiFirmwareIn.suffix().compare("frsk", Qt::CaseInsensitive) == 0);
 
 	QFile fileFirmwareOut(strFirmwareOut);
-	if (!strFirmwareOut.isEmpty() && !fileFirmwareOut.open(QIODevice::WriteOnly)) {
-		std::cerr << "Failed to open output firmware file \"" << strFirmwareOut.toUtf8().data() << "\" for writing" << std::endl;
-		return -4;
+	if (bInteractive && fileFirmwareOut.exists()) {
+		BTN_TYPE nResp = dlgProg.promptUser(CCLIProgDlg::PT_QUESTION, "Firmware Output File \"" + strFirmwareOut + "\" Exists!\n"
+												"Overwrite it?", CCLIProgDlg::Yes | CCLIProgDlg::No, CCLIProgDlg::No);
+		if (nResp != CCLIProgDlg::Yes) {
+			std::cerr << "User declined overwriting firmware output file.  Aborting" << std::endl;
+			return -4;
+		}
 	}
 
+	if (!strLogFile.isEmpty()) {
+		QFile fileLog(strLogFile);
+		if (bInteractive && fileLog.exists()) {
+			BTN_TYPE nResp = dlgProg.promptUser(CCLIProgDlg::PT_QUESTION, "Log File \"" + strLogFile + "\" Exists!\n"
+													"Overwrite it?", CCLIProgDlg::Yes | CCLIProgDlg::No, CCLIProgDlg::No);
+			if (nResp != CCLIProgDlg::Yes) {
+				std::cerr << "User declined overwriting log file.  Aborting" << std::endl;
+				return -5;
+			}
+		}
+	}
+
+
 	if (!strFirmwareOut.isEmpty()) {
+		if (!fileFirmwareOut.open(QIODevice::WriteOnly)) {
+			std::cerr << "Failed to open output firmware file \"" << strFirmwareOut.toUtf8().data() << "\" for writing" << std::endl;
+			return -4;
+		}
+
 		QFileInfo fiFirmwareOut(fileFirmwareOut);
 		if (fiFirmwareOut.suffix().compare("frsk", Qt::CaseInsensitive) == 0) {
 			// TODO : Add support for writing .frsk firmware output
@@ -228,9 +253,6 @@ int main(int argc, char *argv[])
 								logFile.writeLogString(strMessage);
 							});
 	}
-
-	CCLIProgDlg dlgProg;
-	dlgProg.setInteractive(bInteractive);
 
 	CFrskySportDeviceEmu emu(sport, &dlgProg);
 	QObject::connect(&emu, SIGNAL(emulationErrorEncountered(QString)), &dlgProg, SLOT(writeMessage(QString)));

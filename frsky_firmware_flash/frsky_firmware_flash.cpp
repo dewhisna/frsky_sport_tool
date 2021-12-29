@@ -194,6 +194,8 @@ int main(int argc, char *argv[])
 	}
 	std::cerr << "Firmware File: " << strFirmware.toUtf8().data() << std::endl;
 
+	CCLIProgDlg dlgProg;
+	dlgProg.setInteractive(bInteractive);
 
 	QFile fileFirmware(strFirmware);
 	if (!fileFirmware.open(QIODevice::ReadOnly)) {
@@ -206,6 +208,16 @@ int main(int argc, char *argv[])
 
 	CLogFile logFile;
 	if (!strLogFile.isEmpty()) {
+		QFile fileLog(strLogFile);
+		if (bInteractive && fileLog.exists()) {
+			BTN_TYPE nResp = dlgProg.promptUser(CCLIProgDlg::PT_QUESTION, "Log File \"" + strLogFile + "\" Exists!\n"
+													"Overwrite it?", CCLIProgDlg::Yes | CCLIProgDlg::No, CCLIProgDlg::No);
+			if (nResp != CCLIProgDlg::Yes) {
+				std::cerr << "User declined overwriting log file.  Aborting" << std::endl;
+				return -5;
+			}
+		}
+
 		if (!logFile.openLogFile(strLogFile, QIODevice::WriteOnly)) {
 			std::cerr << "Failed to open \"" << strLogFile.toUtf8().data() << "\" for writing" << std::endl;
 			std::cerr << logFile.getLastError().toUtf8().data() << std::endl;
@@ -218,10 +230,8 @@ int main(int argc, char *argv[])
 							});
 	}
 
-	CCLIProgDlg dlgProg;
 	CFrskyDeviceFirmwareUpdate fsm(sport, &dlgProg);
 
-	dlgProg.setInteractive(bInteractive);
 
 	if (!fsm.flashDeviceFirmware(fileFirmware, bIsFrsk, true)) {
 		std::cerr << fsm.getLastError().toUtf8().data() << std::endl;
