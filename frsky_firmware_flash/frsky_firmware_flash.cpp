@@ -61,6 +61,7 @@ int main(int argc, char *argv[])
 
 	QString strFirmware;
 	QString strLogFile;
+	bool bLogEchos = false;
 	SPORT_ID_ENUM nSport = CPersistentSettings::instance()->getFirmwareSportPort();
 	QString strPort = CPersistentSettings::instance()->getDeviceSerialPort(nSport);
 	bool bHavePortNameSetting =!strPort.isEmpty();
@@ -124,6 +125,8 @@ int main(int argc, char *argv[])
 			} else {
 				strLogFile = strArg.mid(2);
 			}
+		} else if (strArg == "-e") {
+			bLogEchos = true;
 		} else if (strArg == "-i") {
 			bInteractive = true;
 		} else {
@@ -158,6 +161,7 @@ int main(int argc, char *argv[])
 		std::cerr << "                    \"DataBit,Parity,StopBit\", such as \"8,E,2\"" << std::endl;
 		std::cerr << "                    If omitted, will use current setting of \"" << lstDefaultPortSettings.join(',').toUtf8().data() << "\"" << std::endl;
 		std::cerr << "    -l <logfile>  = optional communications log file to generate" << std::endl;
+		std::cerr << "    -e = Log transmit echo messages" << std::endl;
 		std::cerr << "    -i = interactive mode, enables prompts" << std::endl;
 		std::cerr << std::endl << std::endl;
 
@@ -165,6 +169,8 @@ int main(int argc, char *argv[])
 	}
 
 	std::cerr << "frsky_firmware_flash version: " << strVersion.toUtf8().data() << std::endl;
+
+	CPersistentSettings::instance()->setFirmwareLogTxEchos(bLogEchos);
 
 	CFrskySportIO sport(nSport);
 	if (!sport.openPort(strPort, nBaudRate, nDataBits, chParity, nStopBits)) {
@@ -184,6 +190,7 @@ int main(int argc, char *argv[])
 	std::cerr << "Port Settings: " << lstPortSettings.join(',').toUtf8().data() << std::endl;
 	if (!strLogFile.isEmpty()) {
 		std::cerr << "Log File: " << strLogFile.toUtf8().data() << std::endl;
+		std::cerr << "Logging Echos: " << (CPersistentSettings::instance()->getFirmwareLogTxEchos() ? "True" : "False") << std::endl;
 	}
 	std::cerr << "Firmware File: " << strFirmware.toUtf8().data() << std::endl;
 
