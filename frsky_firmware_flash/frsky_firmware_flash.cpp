@@ -231,7 +231,12 @@ int main(int argc, char *argv[])
 	}
 
 	CFrskyDeviceFirmwareUpdate fsm(sport, &dlgProg);
-
+	if (!bInteractive && bIsFrsk) {
+		CFrskyDeviceFirmwareUpdate::TFirmwareFileContent ffc = fsm.verifyFRSKFirmwareFileContent(fileFirmware);
+		if (ffc.m_bValid) {
+			std::cerr << ffc.m_strFirmwareDetail.toUtf8().data();
+		}
+	}
 
 	if (!fsm.flashDeviceFirmware(fileFirmware, bIsFrsk, true)) {
 		std::cerr << fsm.getLastError().toUtf8().data() << std::endl;
