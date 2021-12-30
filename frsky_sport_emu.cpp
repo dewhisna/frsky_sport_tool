@@ -558,9 +558,7 @@ CFrskySportDeviceEmu::CFrskySportDeviceEmu(CFrskySportIO &frskySportIO, CUICallb
 		pUICallback->hookCancel(this, SLOT(endEmulation()));
 	}
 
-	if (m_bRxPoll) {
-		setReceiverPolling(true);
-	}
+	setReceiverPolling(m_bRxPoll);
 }
 
 CFrskySportDeviceEmu::~CFrskySportDeviceEmu()
