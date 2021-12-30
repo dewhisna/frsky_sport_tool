@@ -61,7 +61,8 @@ CAboutDlg::CAboutDlg(QWidget *parent) :
 
 CAboutDlg::~CAboutDlg()
 {
-
+	delete ui;
+	ui = nullptr;
 }
 
 // ============================================================================
