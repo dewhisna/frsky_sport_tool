@@ -63,8 +63,16 @@ public slots:
 signals:
 	void cancel_triggered();
 
+protected slots:
+	void en_consoleKeyPressed(char nKey);
+
+protected:
+	char waitForKeyPress(bool bEcho);
+
 private:
 	bool m_bCanCancel;
+	bool m_bKeyPressed;
+	char m_nKey;
 };
 
 // ============================================================================

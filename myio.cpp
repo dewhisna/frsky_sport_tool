@@ -30,6 +30,28 @@
 
 // ============================================================================
 
+CConsoleReader::CConsoleReader(bool bEcho, QObject *pParent)
+	:	QThread(pParent),
+		m_bEcho(bEcho)
+{
+	connect(this, SIGNAL(finished()), this, SLOT(deleteLater()), Qt::QueuedConnection);
+}
+
+CConsoleReader::~CConsoleReader()
+{
+}
+
+void CConsoleReader::run()
+{
+//	forever
+//    {
+        char key = getch1(m_bEcho);
+        emit KeyPressed(key);
+//    }
+}
+
+// ============================================================================
+
 
 #if defined(Q_OS_LINUX) || defined(Q_OS_UNIX)
 
@@ -206,7 +228,7 @@ char getch1(bool bEcho)
 
 // ============================================================================
 
-char g_inputBuf[INPUT_BUF_SIZE];
+char thread_local g_inputBuf[INPUT_BUF_SIZE];
 
 bool getDouble(double *aDouble)
 {

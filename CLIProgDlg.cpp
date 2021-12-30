@@ -26,6 +26,7 @@
 
 #include <iostream>
 #include <QStringList>
+#include <QCoreApplication>
 
 namespace {
 	struct BTN_MAP {
@@ -61,7 +62,9 @@ namespace {
 
 CCLIProgDlg::CCLIProgDlg(QObject *pParent)
 	:	QObject(pParent),
-		m_bCanCancel(true)
+		m_bCanCancel(true),
+		m_bKeyPressed(false),
+		m_nKey(0)
 {
 }
 
@@ -133,7 +136,7 @@ BTN_TYPE CCLIProgDlg::promptUser(PROMPT_TYPE nPromptType,
 	BTN_TYPE nBtn = nDefaultButton;
 	while (!bDone) {
 		std::cerr << std::endl << slButtons.join(", ").toUtf8().data() << std::endl << ">>> ";
-		char ch = toupper(getch1(false));
+		char ch = toupper(waitForKeyPress(false));
 		std::cerr << ch;
 		std::cerr.flush();
 
@@ -175,6 +178,27 @@ void CCLIProgDlg::cancel()
 void CCLIProgDlg::writeMessage(const QString &strMessage)
 {
 	std::cerr << strMessage.toUtf8().data() << std::endl;
+}
+
+void CCLIProgDlg::en_consoleKeyPressed(char nKey)
+{
+	m_bKeyPressed = true;
+	m_nKey = nKey;
+}
+
+char CCLIProgDlg::waitForKeyPress(bool bEcho)
+{
+	CConsoleReader *pConsoleReader = new CConsoleReader(bEcho);
+	connect(pConsoleReader, SIGNAL (KeyPressed(char)), this, SLOT(en_consoleKeyPressed(char)));
+	pConsoleReader->start();
+
+	m_bKeyPressed = false;
+	while (!m_bKeyPressed) {
+		QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
+		QCoreApplication::sendPostedEvents();
+	}
+
+	return m_nKey;
 }
 
 // ============================================================================

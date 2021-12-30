@@ -30,6 +30,28 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <QThread>
+
+// ============================================================================
+
+class CConsoleReader : public QThread
+{
+	Q_OBJECT
+signals:
+	void KeyPressed(char ch);
+
+public:
+	CConsoleReader(bool bEcho, QObject *pParent = nullptr);
+	virtual ~CConsoleReader();
+
+	virtual void run() override;
+
+private:
+	bool m_bEcho;
+};
+
+// ============================================================================
+
 extern char my_getch(void);
 extern char my_getche(void);
 extern char getch1(bool bEcho = true);
@@ -39,7 +61,7 @@ extern int my_kbhit(void);
 
 constexpr int INPUT_BUF_SIZE = 512;
 
-extern char g_inputBuf[INPUT_BUF_SIZE];
+extern thread_local char g_inputBuf[INPUT_BUF_SIZE];
 
 #define my_scanf(format, ...) ((fgets(g_inputBuf, sizeof(g_inputBuf), stdin) != nullptr) ? sscanf(g_inputBuf, format, ##__VA_ARGS__) : 0)
 
