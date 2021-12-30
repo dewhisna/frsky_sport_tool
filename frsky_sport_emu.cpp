@@ -232,6 +232,8 @@ CFrskySportDeviceEmu::FrameProcessResult CFrskySportDeviceEmu::processFrame()
 	FrameProcessResult results;
 	results.m_bAdvanceState = false;
 
+	if (!emulatorRunning()) return results;		// Don't run state-machine logic if the emulator isn't even running
+
 	if (m_rxBuffer.isFirmwarePacket()) {
 		if ((m_rxBuffer.firmwarePacket().m_physicalId == PHYS_ID_FIRMCMD) &&
 			(m_rxBuffer.firmwarePacket().m_primId == PRIM_ID_FIRMWARE_FRAME) &&
