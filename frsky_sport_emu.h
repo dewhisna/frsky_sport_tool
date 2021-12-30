@@ -48,6 +48,7 @@ protected:
 	// State-Machine:
 	enum State {
 		SPORT_IDLE,					// In idle condition, doing nothing yet
+		SPORT_MONITOR_ONLY_MODE,	// Running in SportMon Mode logging packets
 		SPORT_POLL_DISC_MODE,		// Running Poll Discover Mode loop (finding new devices) -- first state from startDeviceEmulation when polling is on
 		SPORT_POLL_SERV_MODE,		// Running Poll Service Mode loop (servicing known devices)
 		SPORT_FLASHMODE_REQ,		// Waiting FlashMode request -- first state from startDeviceEmulation when polling is off
@@ -86,6 +87,11 @@ public:
 	bool inPollingMode() const
 	{
 		return ((m_state == SPORT_POLL_DISC_MODE) || (m_state == SPORT_POLL_SERV_MODE));
+	}
+
+	bool inMonitorMode() const
+	{
+		return (m_state == SPORT_MONITOR_ONLY_MODE);
 	}
 
 	// startDeviceEmulation function:
@@ -157,6 +163,7 @@ protected:
 		QString m_strLogDetail;				// Additional log file detail to add to message being processed
 	};
 	FrameProcessResult processFrame();		// Process the current frame in m_rxBuffer
+	static QString logMonitorModeFrame(const CSportRxBuffer &rxBuf);		// Called by processFrame() for Monitor Mode operations
 	void sendFirmwareFrame(const CSportFirmwarePacket &packet, const QString &strLogDetail = QString());	// Transmit frame with specified packet on bus
 	void sendTelemetryFrame(const CSportTelemetryPacket &packet, const QString &strLogDetail = QString());	// Transmit frame with specified packet on bus
 	bool compareFirmware() const;			// Compare received firmware against original firmware file expected

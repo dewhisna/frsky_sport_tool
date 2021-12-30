@@ -25,6 +25,7 @@
 #include <frsky_sport_io.h>
 #include <frsky_sport_emu.h>
 #include <CLIProgDlg.h>
+#include "myio.h"
 
 #include <QCoreApplication>
 #include <QFile>
@@ -69,6 +70,7 @@ int main(int argc, char *argv[])
 	char chParity = 'N';
 	int nStopBits = 1;
 	bool bInteractive = false;
+	bool bSportMonMode = false;
 	bool bNeedUsage = false;
 	int nArgsFound = 0;
 
@@ -130,6 +132,8 @@ int main(int argc, char *argv[])
 			} else {
 				strLogFile = strArg.mid(2);
 			}
+		} else if (strArg == "-m") {
+			bSportMonMode = true;
 		} else if (strArg == "-i") {
 			bInteractive = true;
 		} else {
@@ -159,6 +163,8 @@ int main(int argc, char *argv[])
 		std::cerr << "    -w <firware-out> = optional output firmware filename to write received data" << std::endl;
 		std::cerr << "                    (written firmware will always be in headerless .frk format)" << std::endl;
 		std::cerr << "    -i = interactive mode, enables prompts" << std::endl;
+		std::cerr << "    -m = Sport Monitor mode for passively monitoring/logging Sport packets" << std::endl;
+		std::cerr << "                    (supersedes other emulation modes)" << std::endl;
 		std::cerr << std::endl << std::endl;
 
 		return -1;
@@ -226,7 +232,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-
 	if (!strFirmwareOut.isEmpty()) {
 		if (!fileFirmwareOut.open(QIODevice::WriteOnly)) {
 			std::cerr << "Failed to open output firmware file \"" << strFirmwareOut.toUtf8().data() << "\" for writing" << std::endl;
@@ -265,7 +270,14 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	bool bSuccess = emu.startDeviceEmulation(CFrskySportDeviceEmu::FRSKDEV_RX, true);
+	if (bSportMonMode) {
+		// Hook keypress event to cancel/exit Monitor Mode:
+		CConsoleReader *pConsoleReader = new CConsoleReader(false);
+		QObject::connect(pConsoleReader, SIGNAL (KeyPressed(char)), &dlgProg, SIGNAL(cancel_triggered()));
+		pConsoleReader->start();
+	}
+
+	bool bSuccess = emu.startDeviceEmulation(bSportMonMode ? CFrskySportDeviceEmu::FRSKDEV_NONE : CFrskySportDeviceEmu::FRSKDEV_RX, true);
 
 	if (fileFirmwareOut.isOpen() && fileFirmwareOut.isWritable() && !emu.getFirmware().isEmpty()) {
 		fileFirmwareOut.write(emu.getFirmware());

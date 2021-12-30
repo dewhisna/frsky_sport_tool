@@ -73,6 +73,12 @@ void CFrskySportDeviceEmu::nextState()
 		case SPORT_IDLE:
 			break;
 
+		case SPORT_MONITOR_ONLY_MODE:
+			if (m_pUICallback) {
+				m_pUICallback->setProgressText(tr("Monitoring Sport Bus traffic..."));
+			}
+			break;
+
 		case SPORT_POLL_DISC_MODE:
 			// TODO : Poll next device in discovery list
 			break;
@@ -127,7 +133,7 @@ void CFrskySportDeviceEmu::nextState()
 		case SPORT_USER_ABORT:
 			emuError(tr("User aborted device emulation"));
 			m_state = SPORT_END_EMULATION;
-			emit deviceEmulationComplete(false);
+			emit deviceEmulationComplete(!emulatorRunning() || inPollingMode() || inMonitorMode());
 			break;
 
 		case SPORT_CMD_DOWNLOAD:
@@ -226,6 +232,80 @@ void CFrskySportDeviceEmu::nextState()
 	}
 }
 
+QString CFrskySportDeviceEmu::logMonitorModeFrame(const CSportRxBuffer &rxBuf)
+{
+	QString strTemp;
+
+	if (rxBuf.isFirmwarePacket()) {
+		switch (rxBuf.firmwarePacket().m_cmd) {
+			case PRIM_REQ_FLASHMODE:			// Request to start flash mode
+				return tr("Request Flash Mode");
+
+			case PRIM_REQ_VERSION:				// Request to send Version Info
+				return tr("Request Version");
+
+			case PRIM_CMD_UPLOAD:				// Command upload mode ??
+				strTemp = tr("Command Upload??");
+				strTemp += QString(": ?Addr: 0x%1").arg(rxBuf.firmwarePacket().dataValue(), 8, 16, QChar('0'));	// Is this really the address?
+				return strTemp;
+
+			case PRIM_CMD_DOWNLOAD:				// Command download mode
+				return tr("Command Download");
+
+			case PRIM_DATA_WORD:				// Receive Data Word Xfer
+				strTemp = tr("Data Xfer");
+				strTemp += QString(": %1.%2.%3.%4: ndx %5")
+						.arg(rxBuf.firmwarePacket().m_data[0], 2, 16, QChar('0'))
+						.arg(rxBuf.firmwarePacket().m_data[1], 2, 16, QChar('0'))
+						.arg(rxBuf.firmwarePacket().m_data[2], 2, 16, QChar('0'))
+						.arg(rxBuf.firmwarePacket().m_data[3], 2, 16, QChar('0'))
+						.arg(rxBuf.firmwarePacket().m_packet, 2, 16, QChar('0'));
+				strTemp += QString(", or ?Addr: 0x%1").arg(rxBuf.firmwarePacket().dataValue(), 8, 16, QChar('0'));		// Can this really be an address?
+				return strTemp;
+
+			case PRIM_DATA_EOF:					// Data End-of-File
+				return tr("Data EOF");
+
+			// ------------------------
+
+			case PRIM_ACK_FLASHMODE:			// Device ACK Flash Mode and is present
+				return tr("Flash Mode ACK");
+
+			case PRIM_ACK_VERSION:			// Device ACK Version Request
+				strTemp = tr("Version ACK");
+				strTemp += tr(": Version=0x%1").arg(rxBuf.firmwarePacket().dataValue(), 8, 16, QChar('0'));
+				return strTemp;
+
+			case PRIM_REQ_DATA_ADDR:		// Device requests specific file address from firmware image
+				strTemp = tr("Req Data");
+				strTemp += tr(", Addr=0x%1").arg(rxBuf.firmwarePacket().dataValue(), 8, 16, QChar('0'));
+				strTemp += tr(", or ?Data Xfer: %1.%2.%3.%4: ndx %5")
+						.arg(rxBuf.firmwarePacket().m_data[0], 2, 16, QChar('0'))
+						.arg(rxBuf.firmwarePacket().m_data[1], 2, 16, QChar('0'))
+						.arg(rxBuf.firmwarePacket().m_data[2], 2, 16, QChar('0'))
+						.arg(rxBuf.firmwarePacket().m_data[3], 2, 16, QChar('0'))
+						.arg(rxBuf.firmwarePacket().m_packet, 2, 16, QChar('0'));
+				return strTemp;
+
+			case PRIM_END_DOWNLOAD:			// Device reports end-of-download (complete)
+				return tr("End Download");
+
+			case PRIM_DATA_CRC_ERR:			// Device reports CRC failure
+				return tr("Data Error Response (CRC?)");
+
+			// ------------------------
+
+			default:
+				return tr("*** Unexpected/Unknown Firmware Packet");
+		}
+	} else if (rxBuf.isTelemetryPacket()) {
+		// TODO : Implement Telemetry Logging
+		return QString();
+	}
+
+	return tr("*** Unknown Packet");
+}
+
 CFrskySportDeviceEmu::FrameProcessResult CFrskySportDeviceEmu::processFrame()
 {
 	assert(m_rxBuffer.haveCompletePacket());
@@ -233,6 +313,11 @@ CFrskySportDeviceEmu::FrameProcessResult CFrskySportDeviceEmu::processFrame()
 	results.m_bAdvanceState = false;
 
 	if (!emulatorRunning()) return results;		// Don't run state-machine logic if the emulator isn't even running
+
+	if (m_state == SPORT_MONITOR_ONLY_MODE) {
+		results.m_strLogDetail = logMonitorModeFrame(m_rxBuffer);
+		return results;
+	}
 
 	if (m_rxBuffer.isFirmwarePacket()) {
 		if ((m_rxBuffer.firmwarePacket().m_physicalId == PHYS_ID_FIRMCMD) &&
@@ -273,7 +358,7 @@ CFrskySportDeviceEmu::FrameProcessResult CFrskySportDeviceEmu::processFrame()
 						((m_state == SPORT_DATA_TRANSFER) && (!m_bFirmwareRxMode))) {	// TODO : Determine if PRIM_CMD_UPLOAD is used for Reading or if PRIM_DATA_ADDR is used
 						m_nReqAddress = m_rxBuffer.firmwarePacket().dataValue();		// Is this really the address?
 						m_bFirmwareRxMode = false;				// Upload/Reading mode
-						results.m_strLogDetail += QString("  Addr: 0x%1 ?").arg(m_nReqAddress, 8, 16, QChar('0'));
+						results.m_strLogDetail += QString(": Addr: 0x%1 ?").arg(m_nReqAddress, 8, 16, QChar('0'));
 						if (m_pFirmware.isNull()) {
 							emuError(tr("Upload Command without emulator firmware file content"));
 							results.m_strLogDetail += tr("  *** Fail: Don't have source firmware file content");
@@ -316,7 +401,7 @@ CFrskySportDeviceEmu::FrameProcessResult CFrskySportDeviceEmu::processFrame()
 							m_state = SPORT_DATA_REQ;
 						} else {
 							m_nReqAddress = m_rxBuffer.firmwarePacket().dataValue();
-							results.m_strLogDetail += QString(" Addr: 0x%1 ?").arg(m_nReqAddress, 8, 16, QChar('0'));
+							results.m_strLogDetail += QString(": Addr: 0x%1 ?").arg(m_nReqAddress, 8, 16, QChar('0'));
 							m_state = SPORT_DATA_AVAIL;
 						}
 						results.m_bAdvanceState = true;
@@ -490,7 +575,8 @@ void CFrskySportDeviceEmu::en_receive()
 					if (CPersistentSettings::instance()->getFirmwareLogTxEchos() ||
 						(!CPersistentSettings::instance()->getFirmwareLogTxEchos() && !bIsEcho) ||
 						(nExpectedCRC != m_rxBuffer.crc()) ||
-						!procResults.m_strLogDetail.isEmpty()) {
+						!procResults.m_strLogDetail.isEmpty() ||
+						inMonitorMode()) {
 						QByteArray baMessage(1, 0x7E);		// Add the 0x7E since it's eaten by the RxBuffer
 						baMessage.append(m_rxBuffer.rawData());
 						QString strExtraMessage = procResults.m_strLogDetail;
@@ -662,12 +748,6 @@ bool CFrskySportDeviceEmu::startDeviceEmulation(FrskyDeviceFlags nDevices, bool 
 		return false;
 	}
 
-	assert(nDevices != FRSKDEV_NONE);
-	if (nDevices == FRSKDEV_NONE) {
-		emuError(tr("Must specify one or more devices to emulate"));
-		return false;
-	}
-
 	// Reset the the state-machine, in case this function gets
 	//	called again without creating a new object:
 	m_nDevices = nDevices;
@@ -682,8 +762,13 @@ bool CFrskySportDeviceEmu::startDeviceEmulation(FrskyDeviceFlags nDevices, bool 
 	m_bRxFirmwareError = false;
 	m_strLastError.clear();
 
-	m_state = (getReceiverPolling() && deviceIsReceiver(nDevices)) ? SPORT_POLL_DISC_MODE : SPORT_FLASHMODE_REQ;
-	nextState();		// Start emulation state-machine
+	if (nDevices != FRSKDEV_NONE) {
+		m_state = (getReceiverPolling() && deviceIsReceiver(nDevices)) ? SPORT_POLL_DISC_MODE : SPORT_FLASHMODE_REQ;
+		nextState();		// Start emulation state-machine
+	} else {
+		m_state = SPORT_MONITOR_ONLY_MODE;
+		nextState();		// Start "emulation" in special bus monitor mode
+	}
 
 	if (bBlocking) {
 		while (m_state != SPORT_END_EMULATION) {
