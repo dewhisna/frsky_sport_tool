@@ -39,6 +39,8 @@ public:
 
 	bool canCancel() const { return m_bCanCancel; }
 
+	char waitForKeyPress(bool bEcho);
+
 	virtual void setProgressRange(int nMin, int nMax) override;
 	virtual void setProgressPos(int nValue) override;
 	virtual void setProgressText(const QString &strStatus) override;
@@ -65,9 +67,6 @@ signals:
 
 protected slots:
 	void en_consoleKeyPressed(char nKey);
-
-protected:
-	char waitForKeyPress(bool bEcho);
 
 private:
 	bool m_bCanCancel;
