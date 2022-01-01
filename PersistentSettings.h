@@ -89,6 +89,10 @@ public:
 
 	// ----
 
+	QString getLuaScriptLastPath() const { return m_strLuaScriptLastPath; }
+
+	// ----
+
 	// --------------------------------
 
 public slots:
@@ -116,6 +120,8 @@ public slots:
 	void setFirmwareLastWritePath(const QString &strLastPath) { m_strFirmwareLastWritePath = strLastPath; }
 
 	// ----
+
+	void setLuaScriptLastPath(const QString &strLastPath) { m_strLuaScriptLastPath = strLastPath; }
 
 	// --------------------------------
 
@@ -146,6 +152,10 @@ protected:
 	QString m_strFirmwareLastReadPath;
 	QString m_strFirmwareLastWritePath;
 	// ----
+
+	// Lua Script Settings:
+	// --------------------
+	QString m_strLuaScriptLastPath;
 
 private:
 };

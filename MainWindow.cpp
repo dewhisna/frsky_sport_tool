@@ -34,6 +34,10 @@
 
 #include "AboutDlg.h"
 
+#ifdef LUA_SUPPORT
+#include "LuaScriptDlg.h"
+#endif
+
 #include <QMessageBox>
 #include <QTimer>
 #include <QFileInfo>
@@ -108,6 +112,15 @@ CMainWindow::CMainWindow(QWidget *parent) :
 
 	// --------------------------------
 
+#ifdef LUA_SUPPORT
+	QMenu *pLuaScriptMenu = ui->menuBar->addMenu(tr("&Lua Script"));
+
+	m_pRunLuaScriptAction = pLuaScriptMenu->addAction(tr("&Run Lua Script..."), this, SLOT(en_runLuaScript()));
+	m_pRunLuaScriptAction->setEnabled(m_pConnectAction->isChecked());
+#endif
+
+	// --------------------------------
+
 	QMenu *pHelpMenu = ui->menuBar->addMenu(tr("&Help"));
 
 	pAction = pHelpMenu->addAction(tr("&About..."));
@@ -128,6 +141,9 @@ CMainWindow::CMainWindow(QWidget *parent) :
 		m_pFirmwareIDAction->setEnabled(bConnected);
 		m_pFirmwareProgramAction->setEnabled(bConnected);
 		m_pFirmwareReadAction->setEnabled(bConnected);
+#ifdef LUA_SUPPORT
+		m_pRunLuaScriptAction->setEnabled(bConnected);
+#endif
 	});
 
 	// --------------------------------
@@ -138,6 +154,7 @@ CMainWindow::CMainWindow(QWidget *parent) :
 CMainWindow::~CMainWindow()
 {
 	delete ui;
+	ui = nullptr;
 }
 
 // ----------------------------------------------------------------------------
@@ -224,6 +241,8 @@ void CMainWindow::writeLogString(SPORT_ID_ENUM nSport, const QString &strLogStri
 		m_logFile.writeLogString(QString::number(nSport+1) + ": " + strLogString);
 	}
 }
+
+// ----------------------------------------------------------------------------
 
 void CMainWindow::en_firmwareID()
 {
@@ -319,5 +338,25 @@ void CMainWindow::en_firmwareRead()
 
 	fileFirmware.close();
 }
+
+// ----------------------------------------------------------------------------
+
+#ifdef LUA_SUPPORT
+void CMainWindow::en_runLuaScript()
+{
+	QString strFilePathName = CSaveLoadFileDialog::getOpenFileName(
+				this,
+				tr("Load Lua Script", "FileFilters"),
+				CPersistentSettings::instance()->getLuaScriptLastPath(),
+				tr("Lua Scripts (*.lua *.luac);;All Files (*.*)", "FileFilters"),
+				nullptr,
+				QFileDialog::Options());
+	if (strFilePathName.isEmpty()) return;
+	CPersistentSettings::instance()->setLuaScriptLastPath(strFilePathName);
+
+	CLuaScriptDlg dlg(strFilePathName, this);
+	dlg.exec();
+}
+#endif
 
 // ============================================================================

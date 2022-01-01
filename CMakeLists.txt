@@ -33,6 +33,19 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# -----------------------------------------------------------------------------
+
+# Compile Options
+
+if(WIN32)
+	set(lua_support_default OFF)
+else()
+	set(lua_support_default ON)
+endif()
+option(LUA_SUPPORT "Use Lua Scripting" ${lua_support_default})
+
+# -----------------------------------------------------------------------------
+
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets SerialPort REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets SerialPort REQUIRED)
 set(QT_LINK_LIBS
@@ -80,6 +93,13 @@ set(frsky_sport_tool_SOURCES
 	crc.cpp
 	${CMAKE_BINARY_DIR}/version.cpp
 )
+if (LUA_SUPPORT)
+	list(APPEND frsky_sport_tool_SOURCES
+		LuaScriptDlg.cpp
+		LuaEngine.cpp
+		LuaEvents.cpp
+	)
+endif()
 
 set(frsky_sport_tool_HEADERS
 	defs.h
@@ -97,16 +117,36 @@ set(frsky_sport_tool_HEADERS
 	crc.h
 	version.h
 )
+if (LUA_SUPPORT)
+	list(APPEND frsky_sport_tool_HEADERS
+		LuaScriptDlg.h
+		LuaEngine.h
+		LuaEvents.h
+		Lua_lrotable.h
+	)
+endif()
 
 set(frsky_sport_tool_FORMS
 	MainWindow.ui
 	ConfigDlg.ui
 	AboutDlg.ui
 )
+if (LUA_SUPPORT)
+	list(APPEND frsky_sport_tool_FORMS
+		LuaScriptDlg.ui
+	)
+endif()
 
 set(frsky_sport_tool_RESOURCES
 	frsky_sport_tool.qrc
 )
+
+if(LUA_SUPPORT)
+	include(lua.cmake)
+	set(LUA_LIBS luaLib)
+else()
+	set(LUA_LIBS)
+endif()
 
 # -----------------------------------------------------------------------------
 
@@ -120,7 +160,14 @@ add_executable(frsky_sport_tool ${GUI_TYPE}
 target_link_libraries(frsky_sport_tool PRIVATE
 	${QT_LINK_LIBS}
 	VersionInfoLib
+	${LUA_LIBS}
 )
+
+if(LUA_SUPPORT)
+	target_compile_definitions(frsky_sport_tool PRIVATE
+		LUA_SUPPORT
+	)
+endif()
 
 add_subdirectory(frsky_firmware_flash)
 add_subdirectory(frsky_device_emu)

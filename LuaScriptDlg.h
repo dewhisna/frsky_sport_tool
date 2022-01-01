@@ -20,69 +20,43 @@
 **
 ****************************************************************************/
 
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef LUASCRIPTDLG_H
+#define LUASCRIPTDLG_H
 
-#include "PersistentSettings.h"
-#include "LogFile.h"
-
-#include <QMainWindow>
 #include <QPointer>
-#include <QAction>
-#include <QActionGroup>
-
-// Forward Declarations
-class CFrskySportIO;
+#include <QDialog>
 
 // ============================================================================
 
+// Forware Declarations
+class QKeyEvent;
+class CLuaEvents;
+class CLuaEngine;
+
+// ----------------------------------------------------------------------------
+
 namespace Ui {
-	class CMainWindow;
+	class CLuaScriptDlg;
 }
 
-class CMainWindow : public QMainWindow
+class CLuaScriptDlg : public QDialog
 {
 	Q_OBJECT
 
 public:
-	explicit CMainWindow(QWidget *parent = nullptr);
-	~CMainWindow();
-
-public slots:
-	void writeLogString(SPORT_ID_ENUM nSport, const QString &strLogString);
-
-protected slots:
-	void en_connect(bool bConnect);
-	void en_configure();
-	void en_writeLogFile(bool bOpen);
-	// ----
-	void en_firmwareID();
-	void en_firmwareProgram();
-	void en_firmwareRead();
-	// ----
-#ifdef LUA_SUPPORT
-	void en_runLuaScript();
-#endif
+	explicit CLuaScriptDlg(const QString &strFilename = QString(), QWidget *parent = nullptr);
+	virtual ~CLuaScriptDlg();
 
 protected:
-	CLogFile m_logFile;
-
-	QPointer<CFrskySportIO> m_arrpSport[SPIDE_COUNT];
+	virtual void keyPressEvent(QKeyEvent *pEvent) override;
+	virtual void keyReleaseEvent(QKeyEvent *pEvent) override;
 
 private:
-	QPointer<QAction> m_pConnectAction;
-	QPointer<QAction> m_pConfigureAction;
-	QPointer<QAction> m_pWriteLogFileAction;
-	QPointer<QAction> m_pFirmwareIDAction;
-	QPointer<QAction> m_pFirmwareProgramAction;
-	QPointer<QAction> m_pFirmwareReadAction;
-#ifdef LUA_SUPPORT
-	QPointer<QAction> m_pRunLuaScriptAction;
-#endif
-
-	Ui::CMainWindow *ui;
+	QPointer<CLuaEvents> m_pLuaEvents;
+	QPointer<CLuaEngine> m_pLuaEngine;
+	Ui::CLuaScriptDlg *ui;
 };
 
 // ============================================================================
 
-#endif // MAINWINDOW_H
+#endif // LUASCRIPTDLG_H

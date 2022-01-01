@@ -48,6 +48,9 @@ namespace {
 	const QString constrLastReadPathKey("LastReadPath");
 	const QString constrLastWritePathKey("LastWritePath");
 	// ----
+	const QString constrLuaScriptGroup("LuaScript");
+	const QString constrLuaScriptLastPathKey("LastPath");
+	// ----
 
 	// ------------------------------------------------------------------------
 
@@ -136,6 +139,12 @@ void CPersistentSettings::saveSettings()
 	setValue(constrLastReadPathKey, m_strFirmwareLastReadPath);
 	setValue(constrLastWritePathKey, m_strFirmwareLastWritePath);
 	endGroup();
+
+	// Lua Script Settings:
+	// --------------------
+	beginGroup(constrLuaScriptGroup);
+	setValue(constrLuaScriptLastPathKey, m_strLuaScriptLastPath);
+	endGroup();
 }
 
 void CPersistentSettings::loadSettings()
@@ -175,6 +184,12 @@ void CPersistentSettings::loadSettings()
 	beginGroup(constrFirmwareGroup);
 	m_strFirmwareLastReadPath = value(constrLastReadPathKey, m_strFirmwareLastReadPath).toString();
 	m_strFirmwareLastWritePath = value(constrLastWritePathKey, m_strFirmwareLastWritePath).toString();
+	endGroup();
+
+	// Lua Script Settings:
+	// --------------------
+	beginGroup(constrLuaScriptGroup);
+	m_strLuaScriptLastPath = value(constrLuaScriptLastPathKey, m_strLuaScriptLastPath).toString();
 	endGroup();
 }
 
