@@ -21,33 +21,26 @@
 ** Dewtronics.
 **
 ****************************************************************************</comment>
- <class>CLuaScriptDlg</class>
- <widget class="QDialog" name="CLuaScriptDlg">
+ <class>CLuaLCD</class>
+ <widget class="QWidget" name="CLuaLCD">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>498</width>
-    <height>290</height>
+    <width>480</width>
+    <height>272</height>
    </rect>
   </property>
-  <property name="windowTitle">
-   <string>Lua Script Runner</string>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
-  <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
-    <widget class="CLuaLCD" name="luaLCD" native="true"/>
-   </item>
-  </layout>
+  <property name="windowTitle">
+   <string>LCD480x272</string>
+  </property>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>CLuaLCD</class>
-   <extends>QWidget</extends>
-   <header>LuaLCD.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>

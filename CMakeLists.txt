@@ -98,6 +98,8 @@ if (LUA_SUPPORT)
 		LuaScriptDlg.cpp
 		LuaEngine.cpp
 		LuaEvents.cpp
+		LuaLCD.cpp
+		LuaGeneral.cpp
 	)
 endif()
 
@@ -122,6 +124,8 @@ if (LUA_SUPPORT)
 		LuaScriptDlg.h
 		LuaEngine.h
 		LuaEvents.h
+		LuaLCD.h
+		LuaGeneral.h
 		Lua_lrotable.h
 	)
 endif()
@@ -134,6 +138,7 @@ set(frsky_sport_tool_FORMS
 if (LUA_SUPPORT)
 	list(APPEND frsky_sport_tool_FORMS
 		LuaScriptDlg.ui
+		LuaLCD.ui
 	)
 endif()
 

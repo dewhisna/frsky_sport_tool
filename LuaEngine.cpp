@@ -28,12 +28,22 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
+#include "Lua_lrotable.h"
+
+#include "defs.h"
+
 #include <QMessageBox>
+
+// Libraries to include:
+#include "LuaEvents.h"
+#include "LuaGeneral.h"
+#include "LuaLCD.h"
 
 // ============================================================================
 
 thread_local lua_State *CLuaEngine::g_pLSScripts = nullptr;
 thread_local CLuaEngine::InterpretterState CLuaEngine::g_luaState = CLuaEngine::INTERPRETER_NOT_RUNNING;
+thread_local QString CLuaEngine::g_strLuaStandaloneScriptPath;
 
 class CLuaPanic
 {
@@ -76,20 +86,132 @@ void CLuaEngine::luaClose(lua_State **ppState)
 	*ppState = nullptr;
 }
 
+// ------------------------------------
+
+int luaopen_lib (lua_State *L, const luaL_Reg * const * pTableOfFuncs, const luaR_value_entry * const * pTableOfVals, bool bGlobal)
+{
+	luaL_checkversion(L);
+	if (!bGlobal) {
+		int nTableSize = 0;
+		if (pTableOfFuncs) {
+			for (const luaL_Reg * const *fncTable = pTableOfFuncs; *fncTable; ++fncTable) {
+				for (const luaL_Reg *fncEntry = *fncTable; fncEntry->name; ++fncEntry) {
+					++nTableSize;
+				}
+			}
+		}
+		if (pTableOfVals) {
+			for (const luaR_value_entry * const *valTable = pTableOfVals; *valTable; ++valTable) {
+				for (const luaR_value_entry *valEntry = *valTable; valEntry->name; ++valEntry) {
+					++nTableSize;
+				}
+			}
+		}
+		lua_createtable(L, 0, nTableSize);
+	} else {
+		lua_pushglobaltable(L);
+	}
+	if (pTableOfFuncs) {
+		for (const luaL_Reg * const *fncTable = pTableOfFuncs; *fncTable; ++fncTable) {
+			luaL_setfuncs(L, *fncTable, 0);
+		}
+	}
+	if (pTableOfVals) {
+		for (const luaR_value_entry * const *valTable = pTableOfVals; *valTable; ++valTable) {
+			for (const luaR_value_entry *valEntry = *valTable; valEntry->name; ++valEntry) {
+				lua_pushnumber(L, valEntry->value);
+				lua_setfield(L, -2, valEntry->name);
+			}
+		}
+	}
+	return 1;
+}
+
+// ------------------------------------
+
+static const luaL_Reg * const lua_opentx_funcs[] =
+{
+	lua_opentx_generalLib,
+	nullptr
+};
+
+// Note: Even though LCD, events, and such have their own
+//	library functions, their constants aren't part
+//	of their respective library (as they should be)
+//	but are part of the "__opentx" library, which
+//	is where OpenTx puts them.  To run their scripts
+//	we have to do the same:
+static const luaR_value_entry * const lua_opentx_values[] =
+{
+	lua_opentx_const_general,
+	lua_opentx_const_events,
+	lua_opentx_const_lcd,
+	nullptr
+};
+
+int luaopen_opentx(lua_State *L)
+{
+	return luaopen_lib(L, lua_opentx_funcs, lua_opentx_values, true);
+}
+
+static const luaL_Reg * const lua_lcd_funcs[] =
+{
+	lua_opentx_lcdLib,
+	nullptr
+};
+
+int luaopen_lcd(lua_State *L)
+{
+	return luaopen_lib(L, lua_lcd_funcs, nullptr, false);
+}
+
+static const luaL_Reg lua_loadedlibs[] = {
+//	{ LUA_GNAME, luaopen_base },
+	{ "__baselib", luaopen_base },
+	{ LUA_LOADLIBNAME, luaopen_package },
+//	{ LUA_COLIBNAME, luaopen_coroutine },
+	{ LUA_TABLIBNAME, luaopen_table },
+	{ LUA_IOLIBNAME, luaopen_io },
+//	{ LUA_OSLIBNAME, luaopen_os },
+	{ LUA_STRLIBNAME, luaopen_string },
+	{ LUA_MATHLIBNAME, luaopen_math },
+	{ LUA_UTF8LIBNAME, luaopen_utf8 },
+//	{ LUA_DBLIBNAME, luaopen_debug },
+	// ----
+	{ "__opentx", luaopen_opentx },
+	{ "lcd", luaopen_lcd },
+	// ----
+	{ nullptr, nullptr }
+};
+
+
+void my_luaL_openlibs (lua_State *L)
+{
+	const luaL_Reg *lib;
+	/* "require" functions from 'loadedlibs' and set results to global table */
+	for (lib = lua_loadedlibs; lib->func; lib++) {
+		luaL_requiref(L, lib->name, lib->func, 1);
+		lua_pop(L, 1);  /* remove lib */
+	}
+}
+
 void CLuaEngine::luaRegisterLibraries(lua_State *pState)
 {
-	luaL_openlibs(pState);
-// TODO : Figure out
-//	registerBitmapClass(pState);
+	my_luaL_openlibs(pState);
+	registerBitmapClass(pState);
 }
+
+// ------------------------------------
 
 CLuaEngine::ScriptState CLuaEngine::luaLoadScriptFileToState(lua_State *pState, const char *pFilename)
 {
+	g_strLuaStandaloneScriptPath.clear();
 	if (g_luaState == INTERPRETER_PANIC) {
 		return SCRIPT_PANIC;
 	} else if (pFilename == nullptr) {
 		return SCRIPT_NOFILE;
 	}
+	g_strLuaStandaloneScriptPath = pFilename;
 
 	int lstatus;
 	ScriptState ret = SCRIPT_NOFILE;

@@ -113,6 +113,11 @@ public:
 	explicit CLuaEngine(QWidget *pParent = nullptr);
 	virtual ~CLuaEngine();
 
+	static QString currentStandaloneScriptPath()
+	{
+		return g_strLuaStandaloneScriptPath;
+	}
+
 public slots:
 	virtual void execLuaScript(const QString &strFilename = QString());		// Loads and inits the Lua Script file
 	virtual void runLuaScript(event_t nEvt);			// Does one run of the Lua Script's 'run' function
@@ -146,6 +151,7 @@ protected:
 protected:	// Data:
 	static thread_local lua_State *g_pLSScripts;
 	static thread_local InterpretterState g_luaState;
+	static thread_local QString g_strLuaStandaloneScriptPath;
 	TScriptInternalData m_standaloneScript;
 
 	QPointer<QWidget> m_pParentWidget;

@@ -36,8 +36,8 @@ extern "C" {
 // A number entry in the read only table
 typedef struct luaR_value_entry
 {
-  const char *name;
-  lua_Number value;
+	const char *name;
+	lua_Number value;
 } luaR_value_entry;
 
 // ============================================================================
