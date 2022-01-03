@@ -32,12 +32,76 @@ extern "C" {
 
 // ============================================================================
 
+thread_local QPointer<CLuaGeneral> CLuaGeneral::g_luaGeneral;
+
+// ============================================================================
+
+CLuaGeneral::CLuaGeneral(QObject *pParent)
+	:	QObject(pParent)
+{
+	m_tmrTickTimer.start();			// Start the timer -- i.e. "turn on the radio"
+
+	// Set the Lua General on this thread to be this one:
+	g_luaGeneral = this;
+}
+
+CLuaGeneral::~CLuaGeneral()
+{
+}
+
+uint32_t CLuaGeneral::getTimer10ms() const
+{
+	return m_tmrTickTimer.nsecsElapsed()/10000000;		// Convert 1nsecs to 10msec
+}
+
+// ============================================================================
+
+// getTime()
+//
+// Return the time since the radio was started in multiple of 10ms
+//
+// retval: number Number of 10ms ticks since the radio was started Example:
+//	run time: 12.54 seconds, return value: 1254
+//
+//	The timer internally uses a 32-bit counter which is enough for 497 days so
+//	overflows will not happen.
+static int luaGetTime(lua_State * L)
+{
+	if (!CLuaGeneral::g_luaGeneral.isNull()) {
+		lua_pushunsigned(L, CLuaGeneral::g_luaGeneral->getTimer10ms());
+	} else {
+		lua_pushunsigned(L, 0);
+	}
+	return 1;
+}
+
+
+// killEvents(key)
+//
+// Stops key state machine. See [Key Events](../key_events.md) for the detailed description.
+//
+//	key (number) key to be killed, can also include event type (only the key part is used)
+static int luaKillEvents(lua_State * L)
+{
+	uint8_t key = EVT_KEY_MASK(luaL_checkinteger(L, 1));
+	// prevent killing maskable keys (only in telemetry scripts)
+	// TODO add which type of script is running before p_call()
+	if (!CLuaGeneral::g_luaGeneral.isNull() && CLuaEvents::isMaskableKey(key)) {
+		emit CLuaGeneral::g_luaGeneral->killKeyEvent(key);
+	}
+	return 0;
+}
+
+
+// ----------------------------------------------------------------------------
+
+
 
 
 // ============================================================================
 
 const luaL_Reg lua_opentx_generalLib[] = {
-//	{ "getTime", luaGetTime },
+	{ "getTime", luaGetTime },
 //	{ "getDateTime", luaGetDateTime },
 #if defined(RTCLOCK)
 //	{ "getRtcTime", luaGetRtcTime },
@@ -63,7 +127,7 @@ const luaL_Reg lua_opentx_generalLib[] = {
 //	{ "defaultStick", luaDefaultStick },
 //	{ "defaultChannel", luaDefaultChannel },
 //	{ "getRSSI", luaGetRSSI },
-//	{ "killEvents", luaKillEvents },
+	{ "killEvents", luaKillEvents },
 //	{ "chdir", luaChdir },
 //	{ "loadScript", luaLoadScript },
 //	{ "getUsage", luaGetUsage },

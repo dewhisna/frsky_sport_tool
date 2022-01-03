@@ -101,7 +101,7 @@ inline bool IS_PREVIOUS_EVENT(event_t event) { return (event==EVT_ROTARY_LEFT); 
 
 constexpr event_t EVT_REFRESH = 0xDD00;
 
-constexpr event_t EVT_NONE = 0x0000;
+constexpr event_t EVT_NONE = 0xFFFF;
 
 // ============================================================================
 
@@ -122,6 +122,9 @@ public slots:
 
 signals:
 	void luaEvent(event_t nEvent);
+
+public:
+	static bool isMaskableKey(event_t nEvent);
 
 protected:
 	event_t keyToEvent(int nQtKey);

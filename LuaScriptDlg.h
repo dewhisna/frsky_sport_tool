@@ -32,6 +32,7 @@
 class QKeyEvent;
 class CLuaEvents;
 class CLuaEngine;
+class CLuaGeneral;
 
 // ----------------------------------------------------------------------------
 
@@ -54,6 +55,7 @@ protected:
 private:
 	QPointer<CLuaEvents> m_pLuaEvents;
 	QPointer<CLuaEngine> m_pLuaEngine;
+	QPointer<CLuaGeneral> m_pLuaGeneral;
 	Ui::CLuaScriptDlg *ui;
 };
 

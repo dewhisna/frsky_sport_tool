@@ -23,6 +23,12 @@
 #ifndef LUA_GENERAL_H
 #define LUA_GENERAL_H
 
+#include <QObject>
+#include <QPointer>
+#include <QElapsedTimer>
+
+#include "LuaEvents.h"
+
 // Forward Declarations
 extern "C" struct luaR_value_entry;
 extern "C" struct luaL_Reg;
@@ -88,6 +94,29 @@ enum TelemetryUnit {
 	UNIT_DATETIME_DAY_MONTH,
 	UNIT_DATETIME_HOUR_MIN,
 	UNIT_DATETIME_SEC
+};
+
+// ============================================================================
+
+class CLuaGeneral : public QObject
+{
+	Q_OBJECT
+
+public:
+	explicit CLuaGeneral(QObject *pParent = nullptr);
+	virtual ~CLuaGeneral();
+
+	uint32_t getTimer10ms() const;
+
+signals:
+	void killKeyEvent(event_t nEvent);					// Signal for parent CLuaEvents::killKeyEvent
+
+private:
+	QElapsedTimer m_tmrTickTimer;			// Used to provide the number of 10ms Ticks since "radio was started" for Lua getTime() function
+
+public:
+	// Per thread Lua General -- one General on each thread running Lua:
+	static thread_local QPointer<CLuaGeneral> g_luaGeneral;
 };
 
 // ----------------------------------------------------------------------------

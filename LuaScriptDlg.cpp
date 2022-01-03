@@ -25,6 +25,7 @@
 
 #include "LuaEvents.h"
 #include "LuaEngine.h"
+#include "LuaGeneral.h"
 
 #include <QTimer>
 #include <QKeyEvent>
@@ -37,11 +38,13 @@ CLuaScriptDlg::CLuaScriptDlg(const QString &strFilename, QWidget *parent) :
 	QDialog(parent),
 	m_pLuaEvents(new CLuaEvents(this)),
 	m_pLuaEngine(new CLuaEngine(this)),
+	m_pLuaGeneral(new CLuaGeneral(this)),
 	ui(new Ui::CLuaScriptDlg)
 {
 	ui->setupUi(this);
 
 	connect(m_pLuaEngine, SIGNAL(killKeyEvent(event_t)), m_pLuaEvents, SLOT(killKeyEvent(event_t)));
+	connect(m_pLuaGeneral, SIGNAL(killKeyEvent(event_t)), m_pLuaEvents, SLOT(killKeyEvent(event_t)));
 	connect(m_pLuaEvents, SIGNAL(luaEvent(event_t)), m_pLuaEngine, SLOT(runLuaScript(event_t)));
 
 	if (!strFilename.isEmpty()) QTimer::singleShot(1, m_pLuaEngine, [=]() { m_pLuaEngine->execLuaScript(strFilename); });

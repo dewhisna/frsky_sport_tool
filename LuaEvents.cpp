@@ -110,6 +110,13 @@ void CLuaEvents::refreshEvent()
 
 // ----------------------------------------------------------------------------
 
+bool CLuaEvents::isMaskableKey(event_t nEvent)
+{
+	return ((nEvent != KEY_EXIT) && (nEvent != KEY_ENTER));
+}
+
+// ----------------------------------------------------------------------------
+
 const luaR_value_entry lua_opentx_const_events[] =
 {
 	{ "EVT_VIRTUAL_PREV", EVT_KEY_FIRST(KEY_UP) },
