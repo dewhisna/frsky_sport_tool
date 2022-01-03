@@ -25,6 +25,8 @@
 
 #include "LuaEngine.h"
 
+#include "PersistentSettings.h"
+
 extern "C" {
 #include <lua/lua.h>
 #include <lua/lualib.h>
@@ -64,7 +66,7 @@ CLuaLCD::CLuaLCD(QWidget *parent) :
 
 	setPixmap(m_pixmap.scaled(width(), height(), Qt::KeepAspectRatio));
 
-	setTheme(LCD_THEME_DEFAULT);
+	setTheme(static_cast<LCD_THEME_ENUM>(CPersistentSettings::instance()->getLuaScreenTheme()));
 
 	// Set the Lua LCD on this thread to be this one:
 	g_luaLCD = this;
@@ -77,9 +79,24 @@ CLuaLCD::~CLuaLCD()
 
 // ----------------------------------------------------------------------------
 
+QString CLuaLCD::themeName(LCD_THEME_ENUM nTheme)
+{
+	switch (nTheme) {
+		case LCD_THEME_DEFAULT:
+			return "Default";
+		case LCD_THEME_DARKBLUE:
+			return "Darkblue";
+		case LCD_THEME_FLEXI:
+			return "Flexi";
+		default:
+			return "Unknown";
+	}
+}
+
 void CLuaLCD::setTheme(LCD_THEME_ENUM nTheme)
 {
 	switch (nTheme) {
+		default:
 		case LCD_THEME_DEFAULT:
 			m_lcdColorTable[TEXT_COLOR_INDEX] = BLACK;
 			m_lcdColorTable[TEXT_BGCOLOR_INDEX] = WHITE;

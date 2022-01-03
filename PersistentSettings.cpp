@@ -50,6 +50,7 @@ namespace {
 	// ----
 	const QString constrLuaScriptGroup("LuaScript");
 	const QString constrLuaScriptLastPathKey("LastPath");
+	const QString constrLuaScreenThemeKey("ScreenTheme");
 	// ----
 
 	// ------------------------------------------------------------------------
@@ -84,7 +85,8 @@ CPersistentSettings::CPersistentSettings(QObject *parent)
 		m_nFirmwareSportPort(SPIDE_SPORT1),
 		m_bFirmwareLogTxEchos(false),
 		m_nDataConfigSportPort(SPIDE_SPORT2),
-		m_bDataConfigLogTxEchos(false)
+		m_bDataConfigLogTxEchos(false),
+		m_nLuaScreenTheme(0)
 {
 	for (int nSport = 0; nSport < SPIDE_COUNT; ++nSport) {
 		m_deviceSettings[nSport] = conarrDefaultDeviceSettings[nSport];
@@ -144,6 +146,7 @@ void CPersistentSettings::saveSettings()
 	// --------------------
 	beginGroup(constrLuaScriptGroup);
 	setValue(constrLuaScriptLastPathKey, m_strLuaScriptLastPath);
+	setValue(constrLuaScreenThemeKey, m_nLuaScreenTheme);
 	endGroup();
 }
 
@@ -190,6 +193,7 @@ void CPersistentSettings::loadSettings()
 	// --------------------
 	beginGroup(constrLuaScriptGroup);
 	m_strLuaScriptLastPath = value(constrLuaScriptLastPathKey, m_strLuaScriptLastPath).toString();
+	m_nLuaScreenTheme = value(constrLuaScreenThemeKey, m_nLuaScreenTheme).toInt();
 	endGroup();
 }
 

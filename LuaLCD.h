@@ -317,7 +317,10 @@ public:
 		LCD_THEME_DEFAULT,
 		LCD_THEME_DARKBLUE,
 		LCD_THEME_FLEXI,
+		// ----
+		LCD_THEME_COUNT
 	};
+	static QString themeName(LCD_THEME_ENUM nTheme);
 
 	void setTheme(LCD_THEME_ENUM nTheme);
 	void setColor(int ndx, const QColor &color);

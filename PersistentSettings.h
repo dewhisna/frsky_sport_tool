@@ -90,6 +90,7 @@ public:
 	// ----
 
 	QString getLuaScriptLastPath() const { return m_strLuaScriptLastPath; }
+	int getLuaScreenTheme() const { return m_nLuaScreenTheme; }
 
 	// ----
 
@@ -122,6 +123,7 @@ public slots:
 	// ----
 
 	void setLuaScriptLastPath(const QString &strLastPath) { m_strLuaScriptLastPath = strLastPath; }
+	void setLuaScreenTheme(int nTheme) { m_nLuaScreenTheme = nTheme; }
 
 	// --------------------------------
 
@@ -156,6 +158,7 @@ protected:
 	// Lua Script Settings:
 	// --------------------
 	QString m_strLuaScriptLastPath;
+	int m_nLuaScreenTheme;
 
 private:
 };

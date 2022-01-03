@@ -36,6 +36,7 @@
 
 #ifdef LUA_SUPPORT
 #include "LuaScriptDlg.h"
+#include "LuaLCD.h"
 #endif
 
 #include <QMessageBox>
@@ -117,6 +118,24 @@ CMainWindow::CMainWindow(QWidget *parent) :
 
 	m_pRunLuaScriptAction = pLuaScriptMenu->addAction(tr("&Run Lua Script..."), this, SLOT(en_runLuaScript()));
 	m_pRunLuaScriptAction->setEnabled(m_pConnectAction->isChecked());
+
+	QMenu *pLuaScreenThemeMenu = pLuaScriptMenu->addMenu(tr("Screen &Theme"));
+	QActionGroup *pLSTMActionGroup = new QActionGroup(pLuaScreenThemeMenu);
+	pLSTMActionGroup->setExclusionPolicy(QActionGroup::ExclusionPolicy::Exclusive);
+	pLuaScreenThemeMenu->menuAction()->setActionGroup(pLSTMActionGroup);
+	for (int i = 0; i < CLuaLCD::LCD_THEME_COUNT; ++i) {
+		pAction = pLuaScreenThemeMenu->addAction(CLuaLCD::themeName(static_cast<CLuaLCD::LCD_THEME_ENUM>(i)));
+		pAction->setCheckable(true);
+		pAction->setData(i);
+		pLSTMActionGroup->addAction(pAction);
+		if (CPersistentSettings::instance()->getLuaScreenTheme() == i) {
+			pAction->setChecked(true);
+		}
+		connect(pLSTMActionGroup, &QActionGroup::triggered, this, [](QAction *pAction)->void {
+			assert(pAction !=nullptr);
+			CPersistentSettings::instance()->setLuaScreenTheme(pAction->data().toInt());
+		});
+	}
 #endif
 
 	// --------------------------------
