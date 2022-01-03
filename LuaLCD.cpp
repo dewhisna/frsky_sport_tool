@@ -42,6 +42,7 @@ extern "C" {
 #include <QSize>
 #include <QFontMetrics>
 #include <QFileInfo>
+#include <QResizeEvent>
 #include <assert.h>
 
 #include <limits>
@@ -55,11 +56,13 @@ thread_local QPointer<CLuaLCD> CLuaLCD::g_luaLCD;
 // ============================================================================
 
 CLuaLCD::CLuaLCD(QWidget *parent) :
-	QWidget(parent),
-	m_pixmap(LCD_W, LCD_H),
+	QLabel(parent),
+	m_pixmap(LCD_W*LCD_RES_SCALING, LCD_H*LCD_RES_SCALING),
 	ui(new Ui::CLuaLCD)
 {
 	ui->setupUi(this);
+
+	setPixmap(m_pixmap.scaled(width(), height(), Qt::KeepAspectRatio));
 
 	setTheme(LCD_THEME_DEFAULT);
 
@@ -73,11 +76,6 @@ CLuaLCD::~CLuaLCD()
 }
 
 // ----------------------------------------------------------------------------
-
-QSize CLuaLCD::sizeHint() const
-{
-	return QSize(LCD_W, LCD_H);
-}
 
 void CLuaLCD::setTheme(LCD_THEME_ENUM nTheme)
 {
@@ -191,11 +189,15 @@ QColor CLuaLCD::color(int ndx)
 
 // ----------------------------------------------------------------------------
 
-void CLuaLCD::paintEvent(QPaintEvent *event)
+void CLuaLCD::resizeEvent(QResizeEvent *event)
 {
-	Q_UNUSED(event);
-	QPainter painter(this);
-	painter.drawPixmap(0, 0, m_pixmap);
+	assert(event != nullptr);
+	setPixmap(m_pixmap.scaled(event->size().width(), event->size().height(), Qt::KeepAspectRatio));
+}
+
+void CLuaLCD::updateLCD()
+{
+	setPixmap(m_pixmap.scaled(width(), height(), Qt::KeepAspectRatio));
 }
 
 // ----------------------------------------------------------------------------
@@ -203,17 +205,17 @@ void CLuaLCD::paintEvent(QPaintEvent *event)
 void CLuaLCD::clear(LcdFlags att)
 {
 	QPainter painter(&m_pixmap);
-	painter.fillRect(0, 0, LCD_W, LCD_H, QColor(QRgb(m_lcdColorTable[COLOR_IDX(att)])));
-	update();
+	painter.fillRect(0, 0, LCD_W*LCD_RES_SCALING, LCD_H*LCD_RES_SCALING, QColor(QRgb(m_lcdColorTable[COLOR_IDX(att)])));
+	updateLCD();
 }
 
 void CLuaLCD::drawPoint(coord_t x, coord_t y, LcdFlags att)
 {
 	QPainter painter(&m_pixmap);
 	painter.setBrush(Qt::NoBrush);
-	painter.setPen(QColor(QRgb(m_lcdColorTable[COLOR_IDX(att)])));
-	painter.drawPoint(x, y);
-	update();
+	painter.setPen(QPen(QColor(QRgb(m_lcdColorTable[COLOR_IDX(att)])), 1*LCD_RES_SCALING));
+	painter.drawPoint(x*LCD_RES_SCALING, y*LCD_RES_SCALING);
+	updateLCD();
 }
 
 void CLuaLCD::drawLine(coord_t x1, coord_t y1, coord_t x2, coord_t y2, uint8_t pat, LcdFlags att)
@@ -229,9 +231,9 @@ void CLuaLCD::drawLine(coord_t x1, coord_t y1, coord_t x2, coord_t y2, uint8_t p
 			break;
 	}
 	painter.setBrush(Qt::NoBrush);
-	painter.setPen(QPen(QBrush(QColor(QRgb(m_lcdColorTable[COLOR_IDX(att)]))), 1, ps));
-	painter.drawLine(x1, y1, x2, y2);
-	update();
+	painter.setPen(QPen(QBrush(QColor(QRgb(m_lcdColorTable[COLOR_IDX(att)]))), 1*LCD_RES_SCALING, ps));
+	painter.drawLine(x1*LCD_RES_SCALING, y1*LCD_RES_SCALING, x2*LCD_RES_SCALING, y2*LCD_RES_SCALING);
+	updateLCD();
 }
 
 static uint8_t getFontHeight(LcdFlags flags)
@@ -244,9 +246,9 @@ void CLuaLCD::drawText(coord_t x, coord_t y, const char * s, LcdFlags att)
 {
 	QPainter painter(&m_pixmap);
 	painter.setBrush(Qt::NoBrush);
-	painter.setPen(QPen(QBrush(QColor(QRgb(m_lcdColorTable[COLOR_IDX(att)]))), 1));
+	painter.setPen(QPen(QBrush(QColor(QRgb(m_lcdColorTable[COLOR_IDX(att)]))), 1*LCD_RES_SCALING));
 	QFont font = painter.font();
-	font.setPixelSize(getFontHeight(att));
+	font.setPixelSize(getFontHeight(att)*LCD_RES_SCALING);
 	painter.setFont(font);
 	QString strText = QString::fromUtf8(s);			// TODO: Should this be UTF8 or Latin1?
 	QFontMetrics fm(font);
@@ -257,8 +259,8 @@ void CLuaLCD::drawText(coord_t x, coord_t y, const char * s, LcdFlags att)
 	} else if (att & RIGHT) {
 		align = Qt::AlignRight;
 	}
-	painter.drawText(QRect(QPoint(x, y), sz), align, strText);
-	update();
+	painter.drawText(QRect(QPoint(x*LCD_RES_SCALING, y*LCD_RES_SCALING), sz*LCD_RES_SCALING), align, strText);
+	updateLCD();
 }
 
 void CLuaLCD::drawBitmap(coord_t x, coord_t y, const QPixmap &bm, const QRect &src, float scale)
@@ -267,8 +269,8 @@ void CLuaLCD::drawBitmap(coord_t x, coord_t y, const QPixmap &bm, const QRect &s
 	if (scale) {
 		painter.scale(scale, scale);
 	}
-	painter.drawPixmap(x, y, bm, src.x(), src.y(), src.width(), src.height());
-	update();
+	painter.drawPixmap(x*LCD_RES_SCALING, y*LCD_RES_SCALING, bm, src.x(), src.y(), src.width(), src.height());
+	updateLCD();
 }
 
 void CLuaLCD::drawRect(coord_t x, coord_t y, coord_t w, coord_t h, uint8_t thickness, uint8_t pat, LcdFlags att)
@@ -284,17 +286,17 @@ void CLuaLCD::drawRect(coord_t x, coord_t y, coord_t w, coord_t h, uint8_t thick
 			break;
 	}
 	painter.setBrush(Qt::NoBrush);
-	painter.setPen(QPen(QBrush(QColor(QRgb(m_lcdColorTable[COLOR_IDX(att)]))), thickness, ps));
-	painter.drawRect(x, y, w, h);
-	update();
+	painter.setPen(QPen(QBrush(QColor(QRgb(m_lcdColorTable[COLOR_IDX(att)]))), thickness*LCD_RES_SCALING, ps));
+	painter.drawRect(x*LCD_RES_SCALING, y*LCD_RES_SCALING, w*LCD_RES_SCALING, h*LCD_RES_SCALING);
+	updateLCD();
 }
 
 void CLuaLCD::drawFilledRect(coord_t x, coord_t y, coord_t w, coord_t h, uint8_t pat, LcdFlags att)
 {
 	Q_UNUSED(pat);
 	QPainter painter(&m_pixmap);
-	painter.fillRect(x, y, w, h, QBrush(QColor(QRgb(m_lcdColorTable[COLOR_IDX(att)]))));
-	update();
+	painter.fillRect(x*LCD_RES_SCALING, y*LCD_RES_SCALING, w*LCD_RES_SCALING, h*LCD_RES_SCALING, QBrush(QColor(QRgb(m_lcdColorTable[COLOR_IDX(att)]))));
+	updateLCD();
 }
 
 

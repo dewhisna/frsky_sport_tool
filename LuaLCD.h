@@ -23,7 +23,7 @@
 #ifndef LUA_LCD_H
 #define LUA_LCD_H
 
-#include <QWidget>
+#include <QLabel>
 #include <QPixmap>
 #include <QPointer>
 #include <QColor>
@@ -59,9 +59,10 @@ struct lua_State;
 // Core LCD:
 // ---------
 
-#define LCD_W                          480
-#define LCD_H                          272
-#define LCD_DEPTH                      16
+constexpr int LCD_W =                  480;
+constexpr int LCD_H =                  272;
+constexpr int LCD_DEPTH =              16;
+constexpr int LCD_RES_SCALING =        2;
 
 // ----------------------------------------------------------------------------
 
@@ -302,7 +303,7 @@ namespace Ui {
 	class CLuaLCD;
 }
 
-class CLuaLCD : public QWidget
+class CLuaLCD : public QLabel
 {
 	Q_OBJECT
 
@@ -310,7 +311,7 @@ public:
 	explicit CLuaLCD(QWidget *parent = nullptr);
 	~CLuaLCD();
 
-	virtual QSize sizeHint() const override;
+//	virtual QSize sizeHint() const override;
 
 	enum LCD_THEME_ENUM {
 		LCD_THEME_DEFAULT,
@@ -336,7 +337,9 @@ public:
 	bool checkBitmap(int ndx);
 
 protected:
-    virtual void paintEvent(QPaintEvent *event) override;
+	virtual void resizeEvent(QResizeEvent *event) override;
+
+	void updateLCD();
 
 protected:
 	uint32_t m_lcdColorTable[LCD_COLOR_COUNT] = {};

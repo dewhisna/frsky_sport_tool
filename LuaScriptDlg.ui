@@ -27,16 +27,32 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>498</width>
-    <height>290</height>
+    <width>978</width>
+    <height>562</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Lua Script Runner</string>
   </property>
+  <property name="sizeGripEnabled">
+   <bool>true</bool>
+  </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
-    <widget class="CLuaLCD" name="luaLCD" native="true"/>
+    <widget class="CLuaLCD" name="luaLCD" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>480</width>
+       <height>272</height>
+      </size>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
