@@ -552,6 +552,7 @@ void CLuaEngine::runLuaScript(event_t nEvt)
 {
 	QString strErrorMsg;
 
+	if (g_pLSScripts == nullptr) return;
 	if (m_standaloneScript.m_state != SCRIPT_OK) return;
 
 	LUA_TRY {
