@@ -136,7 +136,6 @@ public:
 
 signals:
 	void deviceEmulationComplete(bool bSuccess);		// bSuccess True if completed successfully, else getLastError will have error message
-	void writeLogString(const QString &strLogString);					// Used for logging of received comm messages
 	void emulationErrorEncountered(const QString &strErrorMessage);		// Used for logging/reporting emulation issues (such as requesting device sending wrong data or bad message)
 
 	// Private:

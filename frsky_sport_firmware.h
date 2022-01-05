@@ -136,7 +136,6 @@ public:
 
 signals:
 	void flashComplete(bool bSuccess);		// bSuccess True if completed successfully, else getLastError will have error message
-	void writeLogString(const QString &strLogString);
 
 	// Private:
 	void dataAvailable();
