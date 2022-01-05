@@ -333,7 +333,7 @@ void CMainWindow::en_firmwareRead()
 	QString strFilePathName = CSaveLoadFileDialog::getSaveFileName(
 				this,
 				tr("Save Firmware File", "FileFilters"),
-				CPersistentSettings::instance()->getLogFileLastPath(),
+				CPersistentSettings::instance()->getFirmwareLastWritePath(),
 				tr("Frsky Firmware Files (*.frk)", "FileFilters"),
 				"frk",
 				nullptr,
