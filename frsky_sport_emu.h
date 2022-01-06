@@ -163,8 +163,8 @@ protected:
 	};
 	FrameProcessResult processFrame();		// Process the current frame in m_rxBuffer
 	static QString logMonitorModeFrame(const CSportRxBuffer &rxBuf);		// Called by processFrame() for Monitor Mode operations
-	void sendFirmwareFrame(const CSportFirmwarePacket &packet, const QString &strLogDetail = QString());	// Transmit frame with specified packet on bus
-	void sendTelemetryFrame(const CSportTelemetryPacket &packet, const QString &strLogDetail = QString());	// Transmit frame with specified packet on bus
+	template<typename Tpacket>
+	void sendFrame(const Tpacket &packet, const QString &strLogDetail = QString());		// Transmit frame with specified packet on bus
 	bool compareFirmware() const;			// Compare received firmware against original firmware file expected
 
 	void resetPollList();

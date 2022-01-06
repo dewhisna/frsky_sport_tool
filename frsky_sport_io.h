@@ -138,6 +138,8 @@ constexpr uint8_t PRIM_ID_FIRMWARE_FRAME = 0x50;
 
 extern uint8_t physicalIdWithCRC(uint8_t physicalId);
 
+typedef uint8_t CSportRawPacket[8];
+
 PACK(union CSportTelemetryPacket
 {
 	void setPhysicalId(uint8_t nPhysId) { m_physicalId = physicalIdWithCRC(nPhysId); };
@@ -184,7 +186,7 @@ private:
 		uint32_t m_value;			// Data Value
 	};
 public:
-	uint8_t m_raw[8];
+	CSportRawPacket m_raw;
 });
 Q_DECLARE_METATYPE(CSportTelemetryPacket)
 
@@ -259,7 +261,7 @@ PACK(union CSportFirmwarePacket
 		uint8_t m_data[4];			// 32-bits of data on data xfer or 32-bit address on xfer request (not defined as uint32_t due to alignment problems with some host micros)
 		uint8_t m_packet;			// index of this 32-bit packet inside 1024-byte block [though FrSky seems to have broken this in their protocol -- see comments in CFrskyDeviceFirmwareUpdate::nextState()]
 	};
-	uint8_t m_raw[8];
+	CSportRawPacket m_raw;
 });
 //Q_DECLARE_METATYPE(CSportFirmwarePacket)
 
@@ -288,8 +290,15 @@ public:
 
 	void pushByte(uint8_t byte);
 	void pushByteWithByteStuffing(uint8_t byte);
-	void pushTelemetryPacketWithByteStuffing(const CSportTelemetryPacket & packet);
-	void pushFirmwarePacketWithByteStuffing(const CSportFirmwarePacket & packet);
+	template<typename Tpacket>
+	void pushPacketWithByteStuffing(const Tpacket &packet)
+	{
+		reset();
+		for (size_t i=0; i<sizeof(Tpacket); ++i) {
+			pushByteWithByteStuffing(packet.m_raw[i]);
+		}
+		pushByteWithByteStuffing(packet.crc());
+	}
 
 protected:
 	QByteArray m_data;

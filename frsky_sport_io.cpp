@@ -74,24 +74,6 @@ void CSportTxBuffer::pushByteWithByteStuffing(uint8_t byte)
 	}
 }
 
-void CSportTxBuffer::pushTelemetryPacketWithByteStuffing(const CSportTelemetryPacket & packet)
-{
-	reset();
-	for (size_t i=0; i<sizeof(CSportTelemetryPacket); ++i) {
-		pushByteWithByteStuffing(packet.m_raw[i]);
-	}
-	pushByteWithByteStuffing(packet.crc());
-}
-
-void CSportTxBuffer::pushFirmwarePacketWithByteStuffing(const CSportFirmwarePacket & packet)
-{
-	reset();
-	for (size_t i=0; i<sizeof(CSportFirmwarePacket); ++i) {
-		pushByteWithByteStuffing(packet.m_raw[i]);
-	}
-	pushByteWithByteStuffing(packet.crc());
-}
-
 // ----------------------------------------------------------------------------
 
 QByteArray CSportRxBuffer::pushByte(uint8_t byte)

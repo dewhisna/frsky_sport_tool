@@ -105,7 +105,7 @@ void CFrskySportDeviceEmu::nextState()
 		case SPORT_FLASHMODE_ACK:
 			// Send response for FlashMode Request
 			m_state = SPORT_VERSION_REQ;
-			sendFirmwareFrame(CSportFirmwarePacket(PRIM_ACK_FLASHMODE, (uint32_t)0, 0, true), tr("Flash Mode ACK"));
+			sendFrame(CSportFirmwarePacket(PRIM_ACK_FLASHMODE, (uint32_t)0, 0, true), tr("Flash Mode ACK"));
 			if (m_pUICallback) {
 				m_pUICallback->setProgressText(tr("Received FlashMode Request, Sending Acknowledge..."));
 			}
@@ -124,7 +124,7 @@ void CFrskySportDeviceEmu::nextState()
 			// Send response for Version Request, but halt
 			//	in this state until we get a command to
 			//	upload or download
-			sendFirmwareFrame(CSportFirmwarePacket(PRIM_ACK_VERSION, m_nVersionInfo, 0, true), tr("Version ACK : Version=0x%1").arg(m_nVersionInfo, 8, 16, QChar('0')));
+			sendFrame(CSportFirmwarePacket(PRIM_ACK_VERSION, m_nVersionInfo, 0, true), tr("Version ACK : Version=0x%1").arg(m_nVersionInfo, 8, 16, QChar('0')));
 			if (m_pUICallback) {
 				m_pUICallback->setProgressText(tr("Received Version Request, Sending Version and Waiting for Download/Upload Start..."));
 			}
@@ -145,7 +145,7 @@ void CFrskySportDeviceEmu::nextState()
 			m_bFirmwareRxMode = true;				// Download/Flashing mode
 			m_baRxFirmware.clear();
 			m_state = SPORT_DATA_TRANSFER;
-			sendFirmwareFrame(CSportFirmwarePacket(PRIM_REQ_DATA_ADDR, m_nReqAddress, 0, true), tr("Req Data, Addr=0x%1").arg(m_nReqAddress, 8, 16, QChar('0')));
+			sendFrame(CSportFirmwarePacket(PRIM_REQ_DATA_ADDR, m_nReqAddress, 0, true), tr("Req Data, Addr=0x%1").arg(m_nReqAddress, 8, 16, QChar('0')));
 			if (m_pUICallback) {
 				m_pUICallback->setProgressText(tr("Received Download Command, Sending Data Request..."));
 			}
@@ -161,7 +161,7 @@ void CFrskySportDeviceEmu::nextState()
 				if (m_pFirmware->atEnd()) {
 					assert(m_nFileAddress == m_nFirmwareSize);
 					m_state = SPORT_END_EMULATION;
-					sendFirmwareFrame(CSportFirmwarePacket(PRIM_END_DOWNLOAD, (uint32_t)0, 0, true), tr("End Download"));
+					sendFrame(CSportFirmwarePacket(PRIM_END_DOWNLOAD, (uint32_t)0, 0, true), tr("End Download"));
 					break;
 				}
 				int nBlockSize = m_pFirmware->read((char*)arrFirmwareBlock, sizeof(arrFirmwareBlock));
@@ -174,7 +174,7 @@ void CFrskySportDeviceEmu::nextState()
 				m_nFileAddress += nBlockSize;
 			}
 			m_state = SPORT_DATA_TRANSFER;
-			sendFirmwareFrame(CSportFirmwarePacket(PRIM_REQ_DATA_ADDR, &arrFirmwareBlock[m_nReqAddress & 0x3FF],
+			sendFrame(CSportFirmwarePacket(PRIM_REQ_DATA_ADDR, &arrFirmwareBlock[m_nReqAddress & 0x3FF],
 						m_nReqAddress & 0xFF, true), tr("Data Xfer: %1.%2.%3.%4")
 						.arg(arrFirmwareBlock[(m_nReqAddress & 0x3FF)+0], 2, 16, QChar('0'))
 						.arg(arrFirmwareBlock[(m_nReqAddress & 0x3FF)+1], 2, 16, QChar('0'))
@@ -188,7 +188,7 @@ void CFrskySportDeviceEmu::nextState()
 			m_nReqAddress += 4;
 			m_nFileAddress += 4;
 			m_state = SPORT_DATA_TRANSFER;
-			sendFirmwareFrame(CSportFirmwarePacket(PRIM_REQ_DATA_ADDR, m_nReqAddress, 0, true), tr("Req Data, Addr=0x%1").arg(m_nReqAddress, 8, 16, QChar('0')));
+			sendFrame(CSportFirmwarePacket(PRIM_REQ_DATA_ADDR, m_nReqAddress, 0, true), tr("Req Data, Addr=0x%1").arg(m_nReqAddress, 8, 16, QChar('0')));
 			break;
 
 		case SPORT_DATA_TRANSFER:
@@ -201,7 +201,7 @@ void CFrskySportDeviceEmu::nextState()
 		case SPORT_END_TRANSFER:
 			// Here when tool has finished sending (or receiving?) data
 			//	and we must send our end download primitive, and we're done
-			sendFirmwareFrame(CSportFirmwarePacket(PRIM_END_DOWNLOAD, (uint32_t)0, 0, true), tr("End Download"));
+			sendFrame(CSportFirmwarePacket(PRIM_END_DOWNLOAD, (uint32_t)0, 0, true), tr("End Download"));
 			m_state = SPORT_END_EMULATION;
 			if (m_pUICallback) {
 				m_pUICallback->setProgressText(tr("Received Data EOF Message with Good Data..."));
@@ -211,7 +211,7 @@ void CFrskySportDeviceEmu::nextState()
 		case SPORT_CRC_FAILURE:
 			// Here if receiving firmware and it was invalid.  Report
 			//	CRC Error primitive and we're done:
-			sendFirmwareFrame(CSportFirmwarePacket(PRIM_DATA_CRC_ERR, (uint32_t)0, 0, true), tr("Data Error Response"));
+			sendFrame(CSportFirmwarePacket(PRIM_DATA_CRC_ERR, (uint32_t)0, 0, true), tr("Data Error Response"));
 			m_state = SPORT_END_EMULATION;
 			if (m_pUICallback) {
 				m_pUICallback->setProgressText(tr("Received Data EOF Message with Bad Data..."));
@@ -449,25 +449,15 @@ CFrskySportDeviceEmu::FrameProcessResult CFrskySportDeviceEmu::processFrame()
 	return results;
 }
 
-void CFrskySportDeviceEmu::sendFirmwareFrame(const CSportFirmwarePacket &packet, const QString &strLogDetail)
+template<typename Tpacket>
+void CFrskySportDeviceEmu::sendFrame(const Tpacket &packet, const QString &strLogDetail)
 {
-	CSportTxBuffer frameFirmware;
-	frameFirmware.pushFirmwarePacketWithByteStuffing(packet);
+	CSportTxBuffer txFrame;
+	txFrame.reset();
+	txFrame.pushPacketWithByteStuffing(packet);
 
 	QByteArray arrBytes(1, 0x7E);	// Start of Frame
-	arrBytes.append(frameFirmware.data());
-	m_frskySportIO.logMessage(CFrskySportIO::LT_TX, arrBytes, strLogDetail);
-	m_frskySportIO.port().write(arrBytes);
-	m_frskySportIO.port().flush();
-}
-
-void CFrskySportDeviceEmu::sendTelemetryFrame(const CSportTelemetryPacket &packet, const QString &strLogDetail)
-{
-	CSportTxBuffer frameTelemetry;
-	frameTelemetry.pushTelemetryPacketWithByteStuffing(packet);
-
-	QByteArray arrBytes(1, 0x7E);	// Start of Frame
-	arrBytes.append(frameTelemetry.data());
+	arrBytes.append(txFrame.data());
 	m_frskySportIO.logMessage(CFrskySportIO::LT_TX, arrBytes, strLogDetail);
 	m_frskySportIO.port().write(arrBytes);
 	m_frskySportIO.port().flush();

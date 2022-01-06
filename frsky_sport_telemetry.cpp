@@ -48,7 +48,7 @@ CFrskySportDeviceTelemetry::FrameProcessResult CFrskySportDeviceTelemetry::proce
 void CFrskySportDeviceTelemetry::txSportPacket(const CSportTelemetryPacket &packet, const QString &strLogDetail, bool bIsPushResponse)
 {
 	m_txBufferLast.reset();
-	m_txBufferLast.pushTelemetryPacketWithByteStuffing(packet);
+	m_txBufferLast.pushPacketWithByteStuffing(packet);
 
 	QByteArray arrBytes(1, 0x7E);	// Start of Frame
 	arrBytes.append(m_txBufferLast.data());

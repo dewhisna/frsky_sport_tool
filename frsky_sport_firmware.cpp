@@ -646,7 +646,7 @@ void CFrskyDeviceFirmwareUpdate::waitState(State nNextState, uint32_t nTimeout, 
 void CFrskyDeviceFirmwareUpdate::sendFrame(const CSportFirmwarePacket &packet, const QString &strLogDetail)
 {
 	CSportTxBuffer frameFirmware;
-	frameFirmware.pushFirmwarePacketWithByteStuffing(packet);
+	frameFirmware.pushPacketWithByteStuffing(packet);
 
 	QByteArray arrBytes(1, 0x7E);	// Start of Frame
 	arrBytes.append(frameFirmware.data());
