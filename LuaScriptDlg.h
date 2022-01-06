@@ -33,6 +33,8 @@ class QKeyEvent;
 class CLuaEvents;
 class CLuaEngine;
 class CLuaGeneral;
+class CFrskySportIO;
+class CFrskySportDeviceTelemetry;
 
 // ----------------------------------------------------------------------------
 
@@ -45,7 +47,7 @@ class CLuaScriptDlg : public QDialog
 	Q_OBJECT
 
 public:
-	explicit CLuaScriptDlg(const QString &strFilename = QString(), QWidget *parent = nullptr);
+	explicit CLuaScriptDlg(CFrskySportIO &frskySportIO, const QString &strFilename = QString(), QWidget *parent = nullptr);
 	virtual ~CLuaScriptDlg();
 
 protected:
@@ -53,6 +55,7 @@ protected:
 	virtual void keyReleaseEvent(QKeyEvent *pEvent) override;
 
 private:
+	QPointer<CFrskySportDeviceTelemetry> m_pFrskyTelemetry;
 	QPointer<CLuaEvents> m_pLuaEvents;
 	QPointer<CLuaEngine> m_pLuaEngine;
 	QPointer<CLuaGeneral> m_pLuaGeneral;

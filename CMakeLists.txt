@@ -89,6 +89,7 @@ set(frsky_sport_tool_SOURCES
 	LogFile.cpp
 	frsky_sport_io.cpp
 	frsky_sport_firmware.cpp
+	frsky_sport_telemetry.cpp
 	SaveLoadFileDialog.cpp
 	crc.cpp
 	${CMAKE_BINARY_DIR}/version.cpp
@@ -115,6 +116,7 @@ set(frsky_sport_tool_HEADERS
 	LogFile.h
 	frsky_sport_io.h
 	frsky_sport_firmware.h
+	frsky_sport_telemetry.h
 	SaveLoadFileDialog.h
 	crc.h
 	version.h

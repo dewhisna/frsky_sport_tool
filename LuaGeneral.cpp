@@ -22,6 +22,8 @@
 
 #include "LuaGeneral.h"
 
+#include "frsky_sport_telemetry.h"
+
 extern "C" {
 #include <lua/lua.h>
 #include <lua/lualib.h>
@@ -36,9 +38,19 @@ thread_local QPointer<CLuaGeneral> CLuaGeneral::g_luaGeneral;
 
 // ============================================================================
 
-CLuaGeneral::CLuaGeneral(QObject *pParent)
-	:	QObject(pParent)
+CLuaGeneral::CLuaGeneral(CFrskySportDeviceTelemetry *pTelemetry, QObject *pParent)
+	:	QObject(pParent),
+		m_pTelemetry(pTelemetry)
 {
+	assert(!m_pTelemetry.isNull());
+
+	connect(this, SIGNAL(sendTxSportPacket(const CSportTelemetryPacket&, const QString&)),
+			m_pTelemetry, SLOT(txSportPacket(const CSportTelemetryPacket&, const QString&)));	// Outgoing immediate
+	connect(this, SIGNAL(pushTxSportPacket(const CSportTelemetryPacket&, const QString&)),
+			m_pTelemetry, SLOT(pushTelemetryResponse(const CSportTelemetryPacket &, const QString&)));	// Outgoing push response
+	connect(m_pTelemetry, SIGNAL(rxSportPacket(const CSportTelemetryPacket&)),
+			this, SLOT(en_rxSportPacket(const CSportTelemetryPacket&)));						// Incoming
+
 	m_tmrTickTimer.start();			// Start the timer -- i.e. "turn on the radio"
 
 	// Set the Lua General on this thread to be this one:
@@ -49,9 +61,40 @@ CLuaGeneral::~CLuaGeneral()
 {
 }
 
+bool CLuaGeneral::sportPortIsOpen() const
+{
+	return (!m_pTelemetry.isNull() && m_pTelemetry->isOpen());
+}
+
+bool CLuaGeneral::haveTelemetryPoll(int nPhysicalId) const
+{
+	if (m_pTelemetry.isNull()) return false;
+	return m_pTelemetry->haveTelemetryPoll(nPhysicalId);
+}
+
+bool CLuaGeneral::isTelemetryPushAvailable(int nPhysicalId) const
+{
+	if (m_pTelemetry.isNull()) return false;
+	return m_pTelemetry->isTelemetryPushAvailable(nPhysicalId);
+}
+
 uint32_t CLuaGeneral::getTimer10ms() const
 {
 	return m_tmrTickTimer.nsecsElapsed()/10000000;		// Convert 1nsecs to 10msec
+}
+
+void CLuaGeneral::en_rxSportPacket(const CSportTelemetryPacket &packet)
+{
+	// Queue a received SPORT packet from the queue. Please note that only packets
+	//	using a data ID within 0x5000 to 0x50FF (frame ID == 0x10), as well as
+	//	packets with a frame ID equal 0x32 (regardless of the data ID) will be
+	//	passed to the LUA telemetry receive queue.
+	if ((packet.getPrimId() == PRIM_ID_SERVER_RESP_CAL_FRAME) ||
+		((packet.getPrimId() == PRIM_ID_DATA_FRAME) &&
+		 (packet.getDataId() >= DATA_ID_DIY_STREAM_FIRST) &&
+		 (packet.getDataId() <= DATA_ID_DIY_STREAM_LAST))) {
+		m_queSportPackets.enqueue(packet);
+	}
 }
 
 // ============================================================================
@@ -95,7 +138,95 @@ static int luaKillEvents(lua_State * L)
 
 // ----------------------------------------------------------------------------
 
+// sportTelemetryPop()
+//
+// Pops a received SPORT packet from the queue. Please note that only packets
+//	using a data ID within 0x5000 to 0x50FF (frame ID == 0x10), as well as
+//	packets with a frame ID equal 0x32 (regardless of the data ID) will be
+//	passed to the LUA telemetry receive queue.
+//
+// retval: nil queue does not contain any (or enough) bytes to form a whole packet
+//
+// retval: multiple returns 4 values:
+//			* sensor ID (number)
+//			* frame ID (number)
+//			* data ID (number)
+//			* value (number)
+static int luaSportTelemetryPop(lua_State * L)
+{
+	if (CLuaGeneral::g_luaGeneral.isNull()) return 0;
 
+	if (CLuaGeneral::g_luaGeneral->haveRxSportPacket()) {
+		CSportTelemetryPacket packet = CLuaGeneral::g_luaGeneral->popRxSportPacket();
+		lua_pushnumber(L, packet.getPhysicalId());
+		lua_pushnumber(L, packet.getPrimId());
+		lua_pushnumber(L, packet.getDataId());
+		lua_pushunsigned(L, packet.getValue());
+		return 4;
+	}
+
+	return 0;
+}
+
+
+// sportTelemetryPush([sensorId, frameId, dataId, value])
+//
+// This functions allows for sending SPORT telemetry data toward the receiver,
+//	and more generally, to anything connected SPORT bus on the receiver or transmitter.
+//
+// When called without parameters, it will only return the status of the output
+//	buffer without sending anything.
+//
+//	sensorId  physical sensor ID
+//	frameId   frame ID
+//	dataId    data ID
+//	value     value
+//
+// retval: boolean  data queued in output buffer or not.
+// retval: nil      incorrect telemetry protocol.
+static int luaSportTelemetryPush(lua_State * L)
+{
+	// This is a Sport Tool, so we will always be on the
+	//	correct telemetry protocol ... so this retval
+	//	will be whether or not we have a LuaGeneral:
+	//	if (!IS_FRSKY_SPORT_PROTOCOL()) {
+	if (CLuaGeneral::g_luaGeneral.isNull()) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	if (lua_gettop(L) == 0) {
+		lua_pushboolean(L, CLuaGeneral::g_luaGeneral->sportPortIsOpen());
+		return 1;
+	} else if (lua_gettop(L) > int(sizeof(CSportTelemetryPacket))) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	uint8_t nPhysicalId = luaL_checkunsigned(L, 1);
+	if ((nPhysicalId < TELEMETRY_PHYS_ID_COUNT) &&
+		(CLuaGeneral::g_luaGeneral->sportPortIsOpen())) {
+		CSportTelemetryPacket packet(	nPhysicalId,	// PhysId
+										luaL_checkunsigned(L, 2),	// PrimId
+										luaL_checkunsigned(L, 3),	// DataId
+										luaL_checkunsigned(L, 4));	// Value
+
+		if (CLuaGeneral::g_luaGeneral->haveTelemetryPoll(nPhysicalId) &&
+			CLuaGeneral::g_luaGeneral->isTelemetryPushAvailable(nPhysicalId)) {
+			// sensor is found, we queue it to transmit on push
+			emit CLuaGeneral::g_luaGeneral->pushTxSportPacket(packet, "From Lua Script");
+		} else {
+			// sensor not found, we send the frame to the SPORT line
+			emit CLuaGeneral::g_luaGeneral->sendTxSportPacket(packet, "From Lua Script");
+		}
+
+		lua_pushboolean(L, true);
+		return 1;
+	}
+
+	lua_pushboolean(L, false);
+	return 1;
+}
 
 
 // ============================================================================
@@ -136,8 +267,8 @@ const luaL_Reg lua_opentx_generalLib[] = {
 #if defined(PXX2)
 //	{ "accessTelemetryPush", luaAccessTelemetryPush },
 #endif
-//	{ "sportTelemetryPop", luaSportTelemetryPop },
-//	{ "sportTelemetryPush", luaSportTelemetryPush },
+	{ "sportTelemetryPop", luaSportTelemetryPop },
+	{ "sportTelemetryPush", luaSportTelemetryPush },
 //	{ "setTelemetryValue", luaSetTelemetryValue },
 #if defined(CROSSFIRE)
 //	{ "crossfireTelemetryPop", luaCrossfireTelemetryPop },

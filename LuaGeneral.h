@@ -26,12 +26,17 @@
 #include <QObject>
 #include <QPointer>
 #include <QElapsedTimer>
+#include <QQueue>
 
 #include "LuaEvents.h"
+
+#include "frsky_sport_io.h"
 
 // Forward Declarations
 extern "C" struct luaR_value_entry;
 extern "C" struct luaL_Reg;
+
+class CFrskySportDeviceTelemetry;
 
 // ============================================================================
 
@@ -103,16 +108,32 @@ class CLuaGeneral : public QObject
 	Q_OBJECT
 
 public:
-	explicit CLuaGeneral(QObject *pParent = nullptr);
+	explicit CLuaGeneral(CFrskySportDeviceTelemetry *pTelemetry, QObject *pParent = nullptr);
 	virtual ~CLuaGeneral();
 
 	uint32_t getTimer10ms() const;
 
+	bool sportPortIsOpen() const;
+	bool haveRxSportPacket() const { return !m_queSportPackets.isEmpty(); }
+	CSportTelemetryPacket popRxSportPacket() { return m_queSportPackets.dequeue(); }
+	// ----
+	bool haveTelemetryPoll(int nPhysicalId) const;
+	bool isTelemetryPushAvailable(int nPhysicalId) const;
+
 signals:
 	void killKeyEvent(event_t nEvent);					// Signal for parent CLuaEvents::killKeyEvent
+	// ----
+	void sendTxSportPacket(const CSportTelemetryPacket &packet, const QString &strLogDetail = QString());
+	void pushTxSportPacket(const CSportTelemetryPacket &packet, const QString &strLogDetail = QString());
+
+private slots:
+	void en_rxSportPacket(const CSportTelemetryPacket &packet);
 
 private:
-	QElapsedTimer m_tmrTickTimer;			// Used to provide the number of 10ms Ticks since "radio was started" for Lua getTime() function
+	QElapsedTimer m_tmrTickTimer;						// Used to provide the number of 10ms Ticks since "radio was started" for Lua getTime() function
+	QQueue<CSportTelemetryPacket> m_queSportPackets;	// Queue of received telemetry packets (filtered for luaSportTelemetryPop)
+	// ----
+	QPointer<CFrskySportDeviceTelemetry> m_pTelemetry;	// Sport Telemetry Serial Handler
 
 public:
 	// Per thread Lua General -- one General on each thread running Lua:

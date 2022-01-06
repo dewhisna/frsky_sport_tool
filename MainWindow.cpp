@@ -363,6 +363,13 @@ void CMainWindow::en_firmwareRead()
 #ifdef LUA_SUPPORT
 void CMainWindow::en_runLuaScript()
 {
+	assert(!m_arrpSport[CPersistentSettings::instance()->getDataConfigSportPort()].isNull());
+
+	if (!m_arrpSport[CPersistentSettings::instance()->getDataConfigSportPort()]->isOpen()) {
+		QMessageBox::critical(this, windowTitle(), tr("Sport #%1 is not open.  Check configuration!").arg(CPersistentSettings::instance()->getDataConfigSportPort()+1));
+		return;
+	}
+
 	QString strFilePathName = CSaveLoadFileDialog::getOpenFileName(
 				this,
 				tr("Load Lua Script", "FileFilters"),
@@ -373,7 +380,7 @@ void CMainWindow::en_runLuaScript()
 	if (strFilePathName.isEmpty()) return;
 	CPersistentSettings::instance()->setLuaScriptLastPath(strFilePathName);
 
-	CLuaScriptDlg dlg(strFilePathName, this);
+	CLuaScriptDlg dlg(*m_arrpSport[CPersistentSettings::instance()->getDataConfigSportPort()], strFilePathName, this);
 	dlg.exec();
 }
 #endif

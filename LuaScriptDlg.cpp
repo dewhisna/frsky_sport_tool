@@ -23,6 +23,8 @@
 #include "LuaScriptDlg.h"
 #include "ui_LuaScriptDlg.h"
 
+#include "frsky_sport_io.h"
+#include "frsky_sport_telemetry.h"
 #include "LuaEvents.h"
 #include "LuaEngine.h"
 #include "LuaGeneral.h"
@@ -34,11 +36,12 @@
 
 // ============================================================================
 
-CLuaScriptDlg::CLuaScriptDlg(const QString &strFilename, QWidget *parent) :
+CLuaScriptDlg::CLuaScriptDlg(CFrskySportIO &frskySportIO, const QString &strFilename, QWidget *parent) :
 	QDialog(parent),
+	m_pFrskyTelemetry(new CFrskySportDeviceTelemetry(frskySportIO, nullptr, this)),
 	m_pLuaEvents(new CLuaEvents(this)),
 	m_pLuaEngine(new CLuaEngine(this)),
-	m_pLuaGeneral(new CLuaGeneral(this)),
+	m_pLuaGeneral(new CLuaGeneral(m_pFrskyTelemetry, this)),
 	ui(new Ui::CLuaScriptDlg)
 {
 	ui->setupUi(this);
@@ -47,7 +50,10 @@ CLuaScriptDlg::CLuaScriptDlg(const QString &strFilename, QWidget *parent) :
 	connect(m_pLuaGeneral, SIGNAL(killKeyEvent(event_t)), m_pLuaEvents, SLOT(killKeyEvent(event_t)));
 	connect(m_pLuaEvents, SIGNAL(luaEvent(event_t)), m_pLuaEngine, SLOT(runLuaScript(event_t)));
 
-	if (!strFilename.isEmpty()) QTimer::singleShot(1, m_pLuaEngine, [=]() { m_pLuaEngine->execLuaScript(strFilename); });
+	// Delay a second before opening the script and executing it to give
+	//	time for communications to run, specifically the telemetry polling,
+	//	before running a script that sends messages, particularly via poll push:
+	if (!strFilename.isEmpty()) QTimer::singleShot(1000, m_pLuaEngine, [=]() { m_pLuaEngine->execLuaScript(strFilename); });
 }
 
 CLuaScriptDlg::~CLuaScriptDlg()

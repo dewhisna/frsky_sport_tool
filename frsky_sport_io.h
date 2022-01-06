@@ -127,31 +127,97 @@ constexpr uint8_t PHYS_ID_29 =		0xDD;		// 1D, 110 : Reserved?
 constexpr uint8_t PHYS_ID_FIRMRSP =	0x5E;		// 1E, 010 : Firmware Response
 constexpr uint8_t PHYS_ID_FIRMCMD =	0xFF;		// 1F, 111 : Firmware Command
 
+constexpr int TELEMETRY_PHYS_ID_COUNT = 28;		// Count of Physical ID Slots for Telemetry (0x00-0x1B), excludes reserved/firmware command/response
 
 // FrSky PRIM IDs (1 byte)
 constexpr uint8_t PRIM_ID_DATA_FRAME = 0x10;
+constexpr uint8_t PRIM_ID_CLIENT_READ_CAL_FRAME = 0x30;
+constexpr uint8_t PRIM_ID_CLIENT_WRITE_CAL_FRAME = 0x31;
+constexpr uint8_t PRIM_ID_SERVER_RESP_CAL_FRAME = 0x32;
 constexpr uint8_t PRIM_ID_FIRMWARE_FRAME = 0x50;
 
-
+extern uint8_t physicalIdWithCRC(uint8_t physicalId);
 
 PACK(union CSportTelemetryPacket
 {
-	CSportTelemetryPacket(uint8_t nPhysID, uint16_t nDataID, uint32_t nValue)
+	void setPhysicalId(uint8_t nPhysId) { m_physicalId = physicalIdWithCRC(nPhysId); };
+	uint8_t getPhysicalId() const { return (m_physicalId & 0x1F); }
+	uint8_t getPrimId() const { return m_primId; }
+	uint16_t getDataId() const { return m_dataId; }
+	uint32_t getValue() const { return m_value; }
+	bool physicalIdValid() const { return (physicalIdWithCRC(getPhysicalId()) == m_physicalId); }	// Check Physical ID CRC
+	CSportTelemetryPacket(uint8_t nPhysId, uint8_t nPrimId, uint16_t nDataId, uint32_t nValue)
 	{
-		m_physicalId = nPhysID;
-		m_primId = PRIM_ID_DATA_FRAME;
-		m_dataId = nDataID;
+		setPhysicalId(nPhysId);
+		m_primId = nPrimId;
+		m_dataId = nDataId;
 		m_value = nValue;
 	}
+	CSportTelemetryPacket(const CSportTelemetryPacket &src)
+	{
+		m_physicalId = src.m_physicalId;
+		m_primId = src.m_primId;
+		m_dataId = src.m_dataId;
+		m_value = src.m_value;
+	}
+	CSportTelemetryPacket()
+	{
+		m_physicalId = 0;
+		m_primId = 0;
+		m_dataId = 0;
+		m_value = 0;
+	}
+	CSportTelemetryPacket &operator =(const CSportTelemetryPacket &src)
+	{
+		m_physicalId = src.m_physicalId;
+		m_primId = src.m_primId;
+		m_dataId = src.m_dataId;
+		m_value = src.m_value;
+		return *this;
+	}
 	uint8_t crc() const;
+private:
 	struct {
 		uint8_t m_physicalId;		// Device Physical ID (with included 3-bit CRC)
 		uint8_t m_primId;			// Communications Primitive
 		uint16_t m_dataId;			// Data Identifier
 		uint32_t m_value;			// Data Value
 	};
+public:
 	uint8_t m_raw[8];
 });
+Q_DECLARE_METATYPE(CSportTelemetryPacket)
+
+PACK(union CSportTelemetryPollPacket
+{
+	void setPhysicalId(uint8_t nPhysId) { m_physicalId = physicalIdWithCRC(nPhysId); };
+	uint8_t getPhysicalId() const { return (m_physicalId & 0x1F); }
+	bool physicalIdValid() const { return (physicalIdWithCRC(getPhysicalId()) == m_physicalId); }	// Check Physical ID CRC
+	CSportTelemetryPollPacket(uint8_t nPhysId)
+	{
+		setPhysicalId(nPhysId);
+	}
+	CSportTelemetryPollPacket(const CSportTelemetryPollPacket &src)
+	{
+		m_physicalId = src.m_physicalId;
+	}
+	CSportTelemetryPollPacket()
+	{
+		m_physicalId = 0;
+	}
+	CSportTelemetryPollPacket &operator =(const CSportTelemetryPollPacket &src)
+	{
+		m_physicalId = src.m_physicalId;
+		return *this;
+	}
+private:
+	struct {
+		uint8_t m_physicalId;		// Device Physical ID (with included 3-bit CRC)
+	};
+public:
+	uint8_t m_raw[1];
+});
+Q_DECLARE_METATYPE(CSportTelemetryPollPacket)
 
 PACK(union CSportFirmwarePacket
 {
@@ -195,9 +261,12 @@ PACK(union CSportFirmwarePacket
 	};
 	uint8_t m_raw[8];
 });
+//Q_DECLARE_METATYPE(CSportFirmwarePacket)
+
 // Double-check sizing to make cross-platform builds easier to debug:
 static_assert(sizeof(CSportTelemetryPacket) == sizeof(CSportFirmwarePacket), "Packet Structures are broken!");
 static_assert(sizeof(CSportTelemetryPacket) == 8, "Packet Structures are broken!");
+static_assert(sizeof(CSportTelemetryPollPacket) == 1, "Packet Structures are broken!");
 
 
 // ============================================================================
@@ -247,6 +316,10 @@ public:
 	}
 
 	bool haveCompletePacket() const { return m_size >= (sizeof(CSportFirmwarePacket)+1); }	// Note: all packets are same size, so doesn't matter which sizeof() we use here.  +1 for CRC
+	bool haveTelemetryPoll() const
+	{
+		return ((m_size == 1) && (m_sportTelemetry.getPhysicalId() < TELEMETRY_PHYS_ID_COUNT));
+	}
 	uint8_t size() const { return m_size; }
 	const uint8_t *data() const { return m_data; }
 	const QByteArray &rawData() const { return m_baRaw; }
@@ -260,6 +333,11 @@ public:
 		assert(m_size >= sizeof(CSportTelemetryPacket));
 		return m_sportTelemetry;
 	}
+	const CSportTelemetryPollPacket &telemetryPollPacket() const
+	{
+		assert(m_size >= sizeof(CSportTelemetryPollPacket));
+		return m_sportTelemetryPoll;
+	}
 	const CSportFirmwarePacket &firmwarePacket() const
 	{
 		assert(m_size >= sizeof(CSportFirmwarePacket));
@@ -269,7 +347,10 @@ public:
 	bool isTelemetryPacket() const
 	{
 		if ((m_size == (sizeof(CSportTelemetryPacket)+1)) &&
-			(m_sportTelemetry.m_primId == PRIM_ID_DATA_FRAME))
+			((m_sportTelemetry.getPrimId() == PRIM_ID_DATA_FRAME) ||
+			 (m_sportTelemetry.getPrimId() == PRIM_ID_CLIENT_READ_CAL_FRAME) ||
+			 (m_sportTelemetry.getPrimId() == PRIM_ID_CLIENT_WRITE_CAL_FRAME) ||
+			 (m_sportTelemetry.getPrimId() == PRIM_ID_SERVER_RESP_CAL_FRAME)))
 			return true;
 		return false;
 	}
@@ -289,6 +370,7 @@ protected:
 		CSportTelemetryPacket m_sportTelemetry;
 		CSportFirmwarePacket m_sportFirmware;
 		uint8_t m_data[SPORT_BUFFER_SIZE];
+		CSportTelemetryPollPacket m_sportTelemetryPoll;
 	};
 	uint8_t m_size = 0;
 	bool m_bInEscape = false;			// Set to true when we receive a 0x7D stuff byte
@@ -308,6 +390,8 @@ public:
 		LT_RX = 0,			// Received Message Log
 		LT_TX = 1,			// Transmit Message Log
 		LT_TXECHO = 2,		// Transmit Echo Message Log
+		LT_TXPUSH = 3,		// Transmit Push Message Log (data pushed by device in response to Telemetry Poll)
+		LT_TELEPOLL = 4,	// Telemetry Poll Log
 	};
 
 	CFrskySportIO(SPORT_ID_ENUM nSport, QObject *pParent = nullptr);

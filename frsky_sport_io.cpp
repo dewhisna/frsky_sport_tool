@@ -26,21 +26,31 @@
 
 // ============================================================================
 
+static constexpr uint8_t BIT(uint8_t x, int index) { return (((x) >> index) & 0x01); }
+uint8_t physicalIdWithCRC(uint8_t physicalId)
+{
+	uint8_t result = (physicalId & 0x1F);
+	result += (BIT(physicalId, 0) ^ BIT(physicalId, 1) ^ BIT(physicalId, 2)) << 5;
+	result += (BIT(physicalId, 2) ^ BIT(physicalId, 3) ^ BIT(physicalId, 4)) << 6;
+	result += (BIT(physicalId, 0) ^ BIT(physicalId, 2) ^ BIT(physicalId, 4)) << 7;
+	return result;
+}
+
 uint8_t CSportTelemetryPacket::crc() const
 {
 	uint16_t crc = 0;
-	for (size_t i=1; i<sizeof(m_raw); ++i) {	// no CRC on 1st byte (physicalId)
+	for (size_t i=1; i<sizeof(m_raw); ++i) {	// no CRC on 1st byte (physicalId), it has its own CRC
 		uint8_t byte = m_raw[i];
-		crc += byte; // 0-1FF
-		crc += crc >> 8; // 0-100
-		crc &= 0x00ff;
+		crc += byte; // 0-1FE
+		crc += crc >> 8; // 0-1FF
+		crc &= 0x00ff;	// 0-FF
 	}
 	return (0xFF - crc);
 }
 
 uint8_t CSportFirmwarePacket::crc() const
 {
-	uint16_t nCRC = crc16(CRC_1021, &m_raw[1], sizeof(m_raw)-1);		// no CRC of 1st byte itself (physicalId)
+	uint16_t nCRC = crc16(CRC_1021, &m_raw[1], sizeof(m_raw)-1);	// no CRC of 1st byte itself (physicalId), it has its own CRC
 
 	// Note: PHYS_ID_FIRMCMD uses the low-byte of the 16-bit CRC,
 	//			PHYS_ID_FIRMRSP uses the high-byte of the 16-bit CRC
@@ -67,8 +77,7 @@ void CSportTxBuffer::pushByteWithByteStuffing(uint8_t byte)
 void CSportTxBuffer::pushTelemetryPacketWithByteStuffing(const CSportTelemetryPacket & packet)
 {
 	reset();
-	pushByte(packet.m_physicalId);		// no bytestuffing
-	for (size_t i=1; i<sizeof(CSportTelemetryPacket); ++i) {
+	for (size_t i=0; i<sizeof(CSportTelemetryPacket); ++i) {
 		pushByteWithByteStuffing(packet.m_raw[i]);
 	}
 	pushByteWithByteStuffing(packet.crc());
@@ -77,8 +86,7 @@ void CSportTxBuffer::pushTelemetryPacketWithByteStuffing(const CSportTelemetryPa
 void CSportTxBuffer::pushFirmwarePacketWithByteStuffing(const CSportFirmwarePacket & packet)
 {
 	reset();
-	pushByte(packet.m_physicalId);		// no bytestuffing
-	for (size_t i=1; i<sizeof(CSportFirmwarePacket); ++i) {
+	for (size_t i=0; i<sizeof(CSportFirmwarePacket); ++i) {
 		pushByteWithByteStuffing(packet.m_raw[i]);
 	}
 	pushByteWithByteStuffing(packet.crc());
@@ -241,10 +249,22 @@ void CFrskySportIO::logMessage(LOG_TYPE nLT, const QByteArray &baMsg, const QStr
 		case LT_TXECHO:
 			strLogMsg += "Echo: ";
 			break;
+		case LT_TXPUSH:
+			strLogMsg += "Push: ";
+			break;
+		case LT_TELEPOLL:
+			strLogMsg += "Poll: ";
+			break;
 	}
 
 	for (int i = 0; i < baMsg.size(); ++i) {
-		if (i) strLogMsg += QChar('.');
+		if (i) {
+			if ((nLT == LT_TXPUSH) && (i==2)) {
+				strLogMsg += QChar('|');
+			} else {
+				strLogMsg += QChar('.');
+			}
+		}
 		strLogMsg += QString("%1").arg((uint8_t)(baMsg.at(i)), 2, 16, QChar('0')).toUpper();
 	}
 
