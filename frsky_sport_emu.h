@@ -194,6 +194,7 @@ protected:
 	QByteArray m_baRxFirmware;				// Firmware received from bus
 	bool m_bRxFirmwareError = false;		// Set to 'True' if there was a CRC error or size error in receiving the firmware -- used for final reponse to tool (complete or fail)
 	CSportRxBuffer m_rxBuffer;				// Receive Sport Packet buffer from serial en_receive events
+	CSportTxBuffer m_txBufferLast;			// Last Transmit Sport Packet buffer -- used to detect echos
 	QTimer m_tmrPollEvent;					// Receiver poll event timer
 
 	QString m_strLastError;					// Last error to report

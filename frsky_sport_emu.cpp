@@ -452,12 +452,11 @@ CFrskySportDeviceEmu::FrameProcessResult CFrskySportDeviceEmu::processFrame()
 template<typename Tpacket>
 void CFrskySportDeviceEmu::sendFrame(const Tpacket &packet, const QString &strLogDetail)
 {
-	CSportTxBuffer txFrame;
-	txFrame.reset();
-	txFrame.pushPacketWithByteStuffing(packet);
+	m_txBufferLast.reset();
+	m_txBufferLast.pushPacketWithByteStuffing(packet);
 
 	QByteArray arrBytes(1, 0x7E);	// Start of Frame
-	arrBytes.append(txFrame.data());
+	arrBytes.append(m_txBufferLast.data());
 	m_frskySportIO.logMessage(CFrskySportIO::LT_TX, arrBytes, strLogDetail);
 	m_frskySportIO.port().write(arrBytes);
 	m_frskySportIO.port().flush();
@@ -548,7 +547,14 @@ void CFrskySportDeviceEmu::en_receive()
 			if (!baExtraneous.isEmpty()) {
 				m_frskySportIO.logMessage(CFrskySportIO::LT_RX, baExtraneous, "*** Extraneous Bytes");
 			}
-			if (m_rxBuffer.haveCompletePacket()) {
+			if ((ndx == arrBytes.size()-1) &&
+				m_rxBuffer.haveTelemetryPoll() && m_rxBuffer.telemetryPollPacket().physicalIdValid()) {
+				bool bIsEcho = (QByteArray((char*)m_rxBuffer.data(), m_rxBuffer.size()) == m_txBufferLast.data());
+				QByteArray baMessage(1, 0x7E);		// Add the 0x7E since it's eaten by the RxBuffer
+				baMessage.append(m_rxBuffer.rawData());
+				m_frskySportIO.logMessage(bIsEcho ? CFrskySportIO::LT_TXECHO : CFrskySportIO::LT_TELEPOLL, baMessage,
+									QString("Poll for PhysID: %1").arg(m_rxBuffer.telemetryPollPacket().getPhysicalId()));
+			} else if (m_rxBuffer.haveCompletePacket()) {
 				if (!m_rxBuffer.isFirmwarePacket() && !m_rxBuffer.isTelemetryPacket()) {
 					QByteArray baUnexpected(1, 0x7E);		// Add the 0x7E since it's eaten by the RxBuffer
 					baUnexpected.append(m_rxBuffer.rawData());
@@ -556,7 +562,8 @@ void CFrskySportDeviceEmu::en_receive()
 				} else {
 					uint8_t nExpectedCRC = m_rxBuffer.isFirmwarePacket() ? m_rxBuffer.firmwarePacket().crc() :
 															m_rxBuffer.telemetryPacket().crc();
-					bool bIsEcho = m_rxBuffer.isFirmwarePacket() && (m_rxBuffer.firmwarePacket().m_physicalId == PHYS_ID_FIRMRSP);
+					//bool bIsEcho = m_rxBuffer.isFirmwarePacket() && (m_rxBuffer.firmwarePacket().m_physicalId == PHYS_ID_FIRMRSP);
+					bool bIsEcho = (QByteArray((char*)m_rxBuffer.data(), m_rxBuffer.size()) == m_txBufferLast.data());
 
 					FrameProcessResult procResults = processFrame();		// Process all packets
 
