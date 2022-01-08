@@ -203,7 +203,7 @@ void CLuaEngine::luaRegisterLibraries(lua_State *pState)
 	registerBitmapClass(pState);
 
 	// Load backward compatibility shims:
-	QFile file(":/bit32.lua");
+	QFile file(":/lua/bit32.lua");
 	if (file.open(QIODevice::ReadOnly)) {
 		QByteArray baBit32 = file.readAll();
 		file.close();

@@ -96,11 +96,11 @@ set(frsky_sport_tool_SOURCES
 )
 if (LUA_SUPPORT)
 	list(APPEND frsky_sport_tool_SOURCES
-		LuaScriptDlg.cpp
-		LuaEngine.cpp
-		LuaEvents.cpp
-		LuaLCD.cpp
-		LuaGeneral.cpp
+		lua/LuaScriptDlg.cpp
+		lua/LuaEngine.cpp
+		lua/LuaEvents.cpp
+		lua/LuaLCD.cpp
+		lua/LuaGeneral.cpp
 	)
 endif()
 
@@ -123,12 +123,12 @@ set(frsky_sport_tool_HEADERS
 )
 if (LUA_SUPPORT)
 	list(APPEND frsky_sport_tool_HEADERS
-		LuaScriptDlg.h
-		LuaEngine.h
-		LuaEvents.h
-		LuaLCD.h
-		LuaGeneral.h
-		Lua_lrotable.h
+		lua/LuaScriptDlg.h
+		lua/LuaEngine.h
+		lua/LuaEvents.h
+		lua/LuaLCD.h
+		lua/LuaGeneral.h
+		lua/Lua_lrotable.h
 	)
 endif()
 
@@ -139,8 +139,8 @@ set(frsky_sport_tool_FORMS
 )
 if (LUA_SUPPORT)
 	list(APPEND frsky_sport_tool_FORMS
-		LuaScriptDlg.ui
-		LuaLCD.ui
+		lua/LuaScriptDlg.ui
+		lua/LuaLCD.ui
 	)
 endif()
 
@@ -149,7 +149,7 @@ set(frsky_sport_tool_RESOURCES
 )
 
 if(LUA_SUPPORT)
-	include(lua.cmake)
+	include(lua/lua.cmake)
 	set(LUA_LIBS luaLib)
 else()
 	set(LUA_LIBS)
@@ -173,6 +173,9 @@ target_link_libraries(frsky_sport_tool PRIVATE
 if(LUA_SUPPORT)
 	target_compile_definitions(frsky_sport_tool PRIVATE
 		LUA_SUPPORT
+	)
+	target_include_directories(frsky_sport_tool PRIVATE
+		./lua
 	)
 endif()
 
