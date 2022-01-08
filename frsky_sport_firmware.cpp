@@ -30,19 +30,6 @@
 // ============================================================================
 
 namespace {
-	constexpr uint8_t PRIM_REQ_FLASHMODE =	0x00;		// Request enter firmware flash mode
-	constexpr uint8_t PRIM_REQ_VERSION =	0x01;		// Request version check
-	constexpr uint8_t PRIM_CMD_UPLOAD =		0x02;		// Command firmware upload ?? (not sure if this is legit or not -- we will experiment to find out)
-	constexpr uint8_t PRIM_CMD_DOWNLOAD =	0x03;		// Command firmware download
-	constexpr uint8_t PRIM_DATA_WORD =		0x04;		// Data Word Xfer
-	constexpr uint8_t PRIM_DATA_EOF =		0x05;		// Data End-of-File
-
-	constexpr uint8_t PRIM_ACK_FLASHMODE =	0x80;		// Confirm enter flash mode
-	constexpr uint8_t PRIM_ACK_VERSION =	0x81;		// Version check response
-	constexpr uint8_t PRIM_REQ_DATA_ADDR =	0x82;		// Request for specific data address (and data for upload?)
-	constexpr uint8_t PRIM_END_DOWNLOAD =	0x83;		// End of download (and upload?)
-	constexpr uint8_t PRIM_DATA_CRC_ERR =	0x84;		// CRC Error
-
 	PACK(struct FrSkyFirmwareInformation {
 		uint8_t fourcc[4];
 		uint8_t headerVersion;

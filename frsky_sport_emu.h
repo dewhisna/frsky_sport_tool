@@ -162,7 +162,6 @@ protected:
 		QString m_strLogDetail;				// Additional log file detail to add to message being processed
 	};
 	FrameProcessResult processFrame();		// Process the current frame in m_rxBuffer
-	static QString logMonitorModeFrame(const CSportRxBuffer &rxBuf);		// Called by processFrame() for Monitor Mode operations
 	template<typename Tpacket>
 	void sendFrame(const Tpacket &packet, const QString &strLogDetail = QString());		// Transmit frame with specified packet on bus
 	bool compareFirmware() const;			// Compare received firmware against original firmware file expected

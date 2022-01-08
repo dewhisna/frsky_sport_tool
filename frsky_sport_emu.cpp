@@ -29,19 +29,6 @@
 // ============================================================================
 
 namespace {
-	constexpr uint8_t PRIM_REQ_FLASHMODE =	0x00;		// Request enter firmware flash mode
-	constexpr uint8_t PRIM_REQ_VERSION =	0x01;		// Request version check
-	constexpr uint8_t PRIM_CMD_UPLOAD =		0x02;		// Command firmware upload ?? (not sure if this is legit or not -- we will experiment to find out)
-	constexpr uint8_t PRIM_CMD_DOWNLOAD =	0x03;		// Command firmware download
-	constexpr uint8_t PRIM_DATA_WORD =		0x04;		// Data Word Xfer
-	constexpr uint8_t PRIM_DATA_EOF =		0x05;		// Data End-of-File
-
-	constexpr uint8_t PRIM_ACK_FLASHMODE =	0x80;		// Confirm enter flash mode
-	constexpr uint8_t PRIM_ACK_VERSION =	0x81;		// Version check response
-	constexpr uint8_t PRIM_REQ_DATA_ADDR =	0x82;		// Request for specific data address (and data for upload?)
-	constexpr uint8_t PRIM_END_DOWNLOAD =	0x83;		// End of download (and upload?)
-	constexpr uint8_t PRIM_DATA_CRC_ERR =	0x84;		// CRC Error
-
 	PACK(struct FrSkyFirmwareInformation {
 		uint8_t fourcc[4];
 		uint8_t headerVersion;
@@ -232,92 +219,17 @@ void CFrskySportDeviceEmu::nextState()
 	}
 }
 
-QString CFrskySportDeviceEmu::logMonitorModeFrame(const CSportRxBuffer &rxBuf)
-{
-	QString strTemp;
-
-	if (rxBuf.isFirmwarePacket()) {
-		switch (rxBuf.firmwarePacket().m_cmd) {
-			case PRIM_REQ_FLASHMODE:			// Request to start flash mode
-				return tr("Request Flash Mode");
-
-			case PRIM_REQ_VERSION:				// Request to send Version Info
-				return tr("Request Version");
-
-			case PRIM_CMD_UPLOAD:				// Command upload mode ??
-				strTemp = tr("Command Upload??");
-				strTemp += QString(": ?Addr: 0x%1").arg(rxBuf.firmwarePacket().dataValue(), 8, 16, QChar('0'));	// Is this really the address?
-				return strTemp;
-
-			case PRIM_CMD_DOWNLOAD:				// Command download mode
-				return tr("Command Download");
-
-			case PRIM_DATA_WORD:				// Receive Data Word Xfer
-				strTemp = tr("Data Xfer");
-				strTemp += QString(": %1.%2.%3.%4: ndx %5")
-						.arg(rxBuf.firmwarePacket().m_data[0], 2, 16, QChar('0'))
-						.arg(rxBuf.firmwarePacket().m_data[1], 2, 16, QChar('0'))
-						.arg(rxBuf.firmwarePacket().m_data[2], 2, 16, QChar('0'))
-						.arg(rxBuf.firmwarePacket().m_data[3], 2, 16, QChar('0'))
-						.arg(rxBuf.firmwarePacket().m_packet, 2, 16, QChar('0'));
-				strTemp += QString(", or ?Addr: 0x%1").arg(rxBuf.firmwarePacket().dataValue(), 8, 16, QChar('0'));		// Can this really be an address?
-				return strTemp;
-
-			case PRIM_DATA_EOF:					// Data End-of-File
-				return tr("Data EOF");
-
-			// ------------------------
-
-			case PRIM_ACK_FLASHMODE:			// Device ACK Flash Mode and is present
-				return tr("Flash Mode ACK");
-
-			case PRIM_ACK_VERSION:			// Device ACK Version Request
-				strTemp = tr("Version ACK");
-				strTemp += tr(": Version=0x%1").arg(rxBuf.firmwarePacket().dataValue(), 8, 16, QChar('0'));
-				return strTemp;
-
-			case PRIM_REQ_DATA_ADDR:		// Device requests specific file address from firmware image
-				strTemp = tr("Req Data");
-				strTemp += tr(", Addr=0x%1").arg(rxBuf.firmwarePacket().dataValue(), 8, 16, QChar('0'));
-				strTemp += tr(", or ?Data Xfer: %1.%2.%3.%4: ndx %5")
-						.arg(rxBuf.firmwarePacket().m_data[0], 2, 16, QChar('0'))
-						.arg(rxBuf.firmwarePacket().m_data[1], 2, 16, QChar('0'))
-						.arg(rxBuf.firmwarePacket().m_data[2], 2, 16, QChar('0'))
-						.arg(rxBuf.firmwarePacket().m_data[3], 2, 16, QChar('0'))
-						.arg(rxBuf.firmwarePacket().m_packet, 2, 16, QChar('0'));
-				return strTemp;
-
-			case PRIM_END_DOWNLOAD:			// Device reports end-of-download (complete)
-				return tr("End Download");
-
-			case PRIM_DATA_CRC_ERR:			// Device reports CRC failure
-				return tr("Data Error Response (CRC?)");
-
-			// ------------------------
-
-			default:
-				return tr("*** Unexpected/Unknown Firmware Packet");
-		}
-	} else if (rxBuf.isTelemetryPacket()) {
-		// TODO : Implement Telemetry Logging
-		return QString();
-	}
-
-	return tr("*** Unknown Packet");
-}
-
 CFrskySportDeviceEmu::FrameProcessResult CFrskySportDeviceEmu::processFrame()
 {
-	assert(m_rxBuffer.haveCompletePacket());
 	FrameProcessResult results;
 	results.m_bAdvanceState = false;
 
-	if (!emulatorRunning()) return results;		// Don't run state-machine logic if the emulator isn't even running
-
 	if (m_state == SPORT_MONITOR_ONLY_MODE) {
-		results.m_strLogDetail = logMonitorModeFrame(m_rxBuffer);
+		results.m_strLogDetail = m_rxBuffer.logDetails();
 		return results;
 	}
+
+	if (!emulatorRunning()) return results;		// Don't run state-machine logic if the emulator isn't even running
 
 	if (m_rxBuffer.isFirmwarePacket()) {
 		if ((m_rxBuffer.firmwarePacket().m_physicalId == PHYS_ID_FIRMCMD) &&
@@ -442,8 +354,10 @@ CFrskySportDeviceEmu::FrameProcessResult CFrskySportDeviceEmu::processFrame()
 		}
 	} else if (m_rxBuffer.isTelemetryPacket()) {
 		// TODO : Handle Telemetry Packet I/O emulation
+	} else if (m_rxBuffer.haveTelemetryPoll()) {
+		// TODO : Handle Polling emulation logic
 	} else {
-		results.m_strLogDetail = tr("*** Unexpected/Unknown Firmware Packet");
+		results.m_strLogDetail = tr("*** Unexpected/Unknown Packet");
 	}
 
 	return results;
@@ -547,13 +461,15 @@ void CFrskySportDeviceEmu::en_receive()
 			if (!baExtraneous.isEmpty()) {
 				m_frskySportIO.logMessage(CFrskySportIO::LT_RX, baExtraneous, "*** Extraneous Bytes");
 			}
-			if ((ndx == arrBytes.size()-1) &&
-				m_rxBuffer.haveTelemetryPoll() && m_rxBuffer.telemetryPollPacket().physicalIdValid()) {
+			if ((ndx == arrBytes.size()-1) && m_rxBuffer.haveTelemetryPoll()) {
 				bool bIsEcho = (QByteArray((char*)m_rxBuffer.data(), m_rxBuffer.size()) == m_txBufferLast.data());
 				QByteArray baMessage(1, 0x7E);		// Add the 0x7E since it's eaten by the RxBuffer
 				baMessage.append(m_rxBuffer.rawData());
 				m_frskySportIO.logMessage(bIsEcho ? CFrskySportIO::LT_TXECHO : CFrskySportIO::LT_TELEPOLL, baMessage,
-									QString("Poll for PhysID: %1").arg(m_rxBuffer.telemetryPollPacket().getPhysicalId()));
+									m_rxBuffer.logDetails());
+				// Do the log above BEFORE calling processFrame so that things like the poll message
+				//	get logged before logging the transmitted response:
+				processFrame();
 			} else if (m_rxBuffer.haveCompletePacket()) {
 				if (!m_rxBuffer.isFirmwarePacket() && !m_rxBuffer.isTelemetryPacket()) {
 					QByteArray baUnexpected(1, 0x7E);		// Add the 0x7E since it's eaten by the RxBuffer

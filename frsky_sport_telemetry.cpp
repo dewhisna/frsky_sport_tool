@@ -29,11 +29,14 @@ CFrskySportDeviceTelemetry::FrameProcessResult CFrskySportDeviceTelemetry::proce
 {
 	FrameProcessResult results;
 
+	results.m_strLogDetail = m_rxBuffer.logDetails();
+
 	if (m_rxBuffer.haveTelemetryPoll()) {
 		uint8_t nPhysId = m_rxBuffer.telemetryPollPacket().getPhysicalId();
 		if (nPhysId < TELEMETRY_PHYS_ID_COUNT) {
 			m_telemetryEndpoints[nPhysId].m_bReceivingPolls = true;
 			if (m_telemetryEndpoints[nPhysId].m_bInUse) {
+				// Push pending data for this poll:
 				txSportPacket(m_telemetryEndpoints[nPhysId].m_responsePacket, m_telemetryEndpoints[nPhysId].m_strLogDetail, true);
 				m_telemetryEndpoints[nPhysId].m_bInUse = false;
 			}
@@ -100,11 +103,12 @@ void CFrskySportDeviceTelemetry::en_receive()
 			if (!baExtraneous.isEmpty()) {
 				m_frskySportIO.logMessage(CFrskySportIO::LT_RX, baExtraneous, "*** Extraneous Bytes");
 			}
-			if ((ndx == arrBytes.size()-1) &&
-				m_rxBuffer.haveTelemetryPoll() && m_rxBuffer.telemetryPollPacket().physicalIdValid()) {
+			if ((ndx == arrBytes.size()-1) && m_rxBuffer.haveTelemetryPoll()) {
 				QByteArray baMessage(1, 0x7E);		// Add the 0x7E since it's eaten by the RxBuffer
 				baMessage.append(m_rxBuffer.rawData());
-				m_frskySportIO.logMessage(CFrskySportIO::LT_TELEPOLL, baMessage, QString("Poll for PhysID: %1").arg(m_rxBuffer.telemetryPollPacket().getPhysicalId()));
+				m_frskySportIO.logMessage(CFrskySportIO::LT_TELEPOLL, baMessage, m_rxBuffer.logDetails());
+				// Do the log above BEFORE calling processFrame so that things like the poll message
+				//	get logged before logging the transmitted response:
 				processFrame();
 			} else if (m_rxBuffer.haveCompletePacket()) {
 				bool bIsEcho = (QByteArray((char*)m_rxBuffer.data(), m_rxBuffer.size()) == m_txBufferLast.data());

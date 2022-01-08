@@ -26,6 +26,82 @@
 
 // ============================================================================
 
+namespace {
+	struct TDataIDNames {
+		uint16_t m_nFirstID;
+		uint16_t m_nLastID;
+		QString m_strName;
+	};
+	static const TDataIDNames conarrDataIDNames[] =
+	{
+		{ DATA_ID_ALT_FIRST, DATA_ID_ALT_LAST, "ALT" },
+		{ DATA_ID_VARIO_FIRST, DATA_ID_VARIO_LAST, "VARIO" },
+		{ DATA_ID_CURR_FIRST, DATA_ID_CURR_LAST, "CURR" },
+		{ DATA_ID_VFAS_FIRST, DATA_ID_VFAS_LAST, "VFAS" },
+		{ DATA_ID_CELLS_FIRST, DATA_ID_CELLS_LAST, "CELLS" },
+		{ DATA_ID_T1_FIRST, DATA_ID_T1_LAST, "T1" },
+		{ DATA_ID_T2_FIRST, DATA_ID_T2_LAST, "T2" },
+		{ DATA_ID_RPM_FIRST, DATA_ID_RPM_LAST, "RPM" },
+		{ DATA_ID_FUEL_FIRST, DATA_ID_FUEL_LAST, "FUEL" },
+		{ DATA_ID_ACCX_FIRST, DATA_ID_ACCX_LAST, "ACCX" },
+		{ DATA_ID_ACCY_FIRST, DATA_ID_ACCY_LAST, "ACCY" },
+		{ DATA_ID_ACCZ_FIRST, DATA_ID_ACCZ_LAST, "ACCZ" },
+		{ DATA_ID_GPS_LONG_LATI_FIRST, DATA_ID_GPS_LONG_LATI_LAST, "GPS LAT/LNG" },
+		{ DATA_ID_GPS_ALT_FIRST, DATA_ID_GPS_ALT_LAST, "GPS ALT" },
+		{ DATA_ID_GPS_SPEED_FIRST, DATA_ID_GPS_SPEED_LAST, "GPS SPEED" },
+		{ DATA_ID_GPS_COURS_FIRST, DATA_ID_GPS_COURS_LAST, "GPS COURS" },
+		{ DATA_ID_GPS_TIME_DATE_FIRST, DATA_ID_GPS_TIME_DATE_LAST, "GPS TIME/DATE" },
+		{ DATA_ID_A3_FIRST, DATA_ID_A3_LAST, "A3" },
+		{ DATA_ID_A4_FIRST, DATA_ID_A4_LAST, "A4" },
+		{ DATA_ID_AIR_SPEED_FIRST, DATA_ID_AIR_SPEED_LAST, "AIR SPEED" },
+		{ DATA_ID_FUEL_QTY_FIRST, DATA_ID_FUEL_QTY_LAST, "FUEL QTY" },
+		{ DATA_ID_RBOX_BATT1_FIRST, DATA_ID_RBOX_BATT1_LAST, "RBOX BATT1" },
+		{ DATA_ID_RBOX_BATT2_FIRST, DATA_ID_RBOX_BATT2_LAST, "RBOX BATT2" },
+		{ DATA_ID_RBOX_STATE_FIRST, DATA_ID_RBOX_STATE_LAST, "RBOX STATE" },
+		{ DATA_ID_RBOX_CNSP_FIRST, DATA_ID_RBOX_CNSP_LAST, "RBOX CNSP" },
+		{ DATA_ID_SD1_FIRST, DATA_ID_SD1_LAST, "SD1" },
+		{ DATA_ID_ESC_POWER_FIRST, DATA_ID_ESC_POWER_LAST, "ESC PWR" },
+		{ DATA_ID_ESC_RPM_CONS_FIRST, DATA_ID_ESC_RPM_CONS_LAST, "ESC RPM" },
+		{ DATA_ID_ESC_TEMPERATURE_FIRST, DATA_ID_ESC_TEMPERATURE_LAST, "ESC TEMP" },
+		{ DATA_ID_RB3040_OUTPUT_FIRST, DATA_ID_RB3040_OUTPUT_LAST, "RB3040 OUT" },
+		{ DATA_ID_RB3040_CH1_2_FIRST, DATA_ID_RB3040_CH1_2_LAST, "RB3040 CH1/2" },
+		{ DATA_ID_RB3040_CH3_4_FIRST, DATA_ID_RB3040_CH3_4_LAST, "RB3040 CH3/4" },
+		{ DATA_ID_RB3040_CH5_6_FIRST, DATA_ID_RB3040_CH5_6_LAST, "RB3040 CH5/6" },
+		{ DATA_ID_RB3040_CH7_8_FIRST, DATA_ID_RB3040_CH7_8_LAST, "RB3040 CH7/8" },
+		{ DATA_ID_X8R_FIRST, DATA_ID_X8R_LAST, "X8R" },
+		{ DATA_ID_SxR_FIRST, DATA_ID_SxR_LAST, "SxR" },
+		{ DATA_ID_GASSUIT_TEMP1_FIRST, DATA_ID_GASSUIT_TEMP1_LAST, "GASSUIT TEMP1" },
+		{ DATA_ID_GASSUIT_TEMP2_FIRST, DATA_ID_GASSUIT_TEMP2_LAST, "GASSUIT TEMP2" },
+		{ DATA_ID_GASSUIT_SPEED_FIRST, DATA_ID_GASSUIT_SPEED_LAST, "GASSUIT SPEED" },
+		{ DATA_ID_GASSUIT_RES_VOL_FIRST, DATA_ID_GASSUIT_RES_VOL_LAST, "GASSUIT RES VOL" },
+		{ DATA_ID_GASSUIT_RES_PERC_FIRST, DATA_ID_GASSUIT_RES_PERC_LAST, "GASSUIT RES PERC" },
+		{ DATA_ID_GASSUIT_FLOW_FIRST, DATA_ID_GASSUIT_FLOW_LAST, "GASSUIT FLOW" },
+		{ DATA_ID_GASSUIT_MAX_FLOW_FIRST, DATA_ID_GASSUIT_MAX_FLOW_LAST, "GASSUIT MAX FLOW" },
+		{ DATA_ID_GASSUIT_AVG_FLOW_FIRST, DATA_ID_GASSUIT_AVG_FLOW_LAST, "GASSUIT AVG FLOW" },
+		{ DATA_ID_SBEC_POWER_FIRST, DATA_ID_SBEC_POWER_LAST, "SBEC POWER" },
+		{ DATA_ID_DIY_STREAM_FIRST, DATA_ID_DIY_STREAM_LAST, "DIY STREAM" },
+		{ DATA_ID_DIY_FIRST, DATA_ID_DIY_LAST, "DIY" },
+		{ DATA_ID_SERVO_FIRST, DATA_ID_SERVO_LAST, "SERVO" },
+		{ DATA_ID_FACT_TEST, DATA_ID_FACT_TEST, "FACT TEST" },
+		{ DATA_ID_VALID_FRAME_RATE, DATA_ID_VALID_FRAME_RATE, "VALID FRAME RATE" },
+		{ DATA_ID_RSSI, DATA_ID_RSSI, "RSSI" },
+		{ DATA_ID_ADC1, DATA_ID_ADC1, "ADC1" },
+		{ DATA_ID_ADC2, DATA_ID_ADC2, "ADC2" },
+		{ DATA_ID_BATT, DATA_ID_BATT, "BATT" },
+		{ DATA_ID_RAS, DATA_ID_RAS, "RAS" },
+		{ DATA_ID_XJT_VERSION, DATA_ID_XJT_VERSION, "XJT VERSION" },
+		{ DATA_ID_R9_PWR, DATA_ID_R9_PWR, "R9 PWR" },
+		{ DATA_ID_SP2UART_A, DATA_ID_SP2UART_A, "SP2UARTA" },
+		{ DATA_ID_SP2UART_B, DATA_ID_SP2UART_B, "SP2UARTB" },
+		{ 0, 0, QString() },
+	};
+
+	// ------------------------------------------------------------------------
+
+};
+
+// ============================================================================
+
 static constexpr uint8_t BIT(uint8_t x, int index) { return (((x) >> index) & 0x01); }
 uint8_t physicalIdWithCRC(uint8_t physicalId)
 {
@@ -121,6 +197,506 @@ QByteArray CSportRxBuffer::pushByte(uint8_t byte)
 	return baExtraneous;
 }
 
+// ----------------------------------------------------------------------------
+
+QString CSportRxBuffer::logDetails()
+{
+	QString strTemp;
+
+	if (isFirmwarePacket()) {
+		switch (firmwarePacket().m_cmd) {
+			case PRIM_REQ_FLASHMODE:			// Request to start flash mode
+				return QObject::tr("Request Flash Mode", "CSportRxBuffer");
+
+			case PRIM_REQ_VERSION:				// Request to send Version Info
+				return QObject::tr("Request Version", "CSportRxBuffer");
+
+			case PRIM_CMD_UPLOAD:				// Command upload mode ??
+				strTemp = QObject::tr("Command Upload??", "CSportRxBuffer");
+				strTemp += QObject::tr(": ?Addr: 0x%1", "CSportRxBuffer").arg(firmwarePacket().dataValue(), 8, 16, QChar('0'));	// Is this really the address?
+				return strTemp;
+
+			case PRIM_CMD_DOWNLOAD:				// Command download mode
+				return QObject::tr("Command Download", "CSportRxBuffer");
+
+			case PRIM_DATA_WORD:				// Receive Data Word Xfer
+				strTemp = QObject::tr("Data Xfer", "CSportRxBuffer");
+				strTemp += QString(": %1.%2.%3.%4: ndx %5")
+						.arg(firmwarePacket().m_data[0], 2, 16, QChar('0'))
+						.arg(firmwarePacket().m_data[1], 2, 16, QChar('0'))
+						.arg(firmwarePacket().m_data[2], 2, 16, QChar('0'))
+						.arg(firmwarePacket().m_data[3], 2, 16, QChar('0'))
+						.arg(firmwarePacket().m_packet, 2, 16, QChar('0'));
+				strTemp += QString(", or ?Addr: 0x%1").arg(firmwarePacket().dataValue(), 8, 16, QChar('0'));		// Can this really be an address?
+				return strTemp;
+
+			case PRIM_DATA_EOF:					// Data End-of-File
+				return QObject::tr("Data EOF", "CSportRxBuffer");
+
+			// ------------------------
+
+			case PRIM_ACK_FLASHMODE:			// Device ACK Flash Mode and is present
+				return QObject::tr("Flash Mode ACK", "CSportRxBuffer");
+
+			case PRIM_ACK_VERSION:			// Device ACK Version Request
+				strTemp = QObject::tr("Version ACK", "CSportRxBuffer");
+				strTemp += QObject::tr(": Version=0x%1", "CSportRxBuffer").arg(firmwarePacket().dataValue(), 8, 16, QChar('0'));
+				return strTemp;
+
+			case PRIM_REQ_DATA_ADDR:		// Device requests specific file address from firmware image
+				strTemp = QObject::tr("Req Data", "CSportRxBuffer");
+				strTemp += QObject::tr(", Addr=0x%1", "CSportRxBuffer").arg(firmwarePacket().dataValue(), 8, 16, QChar('0'));
+				strTemp += QObject::tr(", or ?Data Xfer: %1.%2.%3.%4: ndx %5", "CSportRxBuffer")
+						.arg(firmwarePacket().m_data[0], 2, 16, QChar('0'))
+						.arg(firmwarePacket().m_data[1], 2, 16, QChar('0'))
+						.arg(firmwarePacket().m_data[2], 2, 16, QChar('0'))
+						.arg(firmwarePacket().m_data[3], 2, 16, QChar('0'))
+						.arg(firmwarePacket().m_packet, 2, 16, QChar('0'));
+				return strTemp;
+
+			case PRIM_END_DOWNLOAD:			// Device reports end-of-download (complete)
+				return QObject::tr("End Download", "CSportRxBuffer");
+
+			case PRIM_DATA_CRC_ERR:			// Device reports CRC failure
+				return QObject::tr("Data Error Response (CRC?)", "CSportRxBuffer");
+
+			// ------------------------
+
+			default:
+				return QObject::tr("*** Unexpected/Unknown Firmware Packet", "CSportRxBuffer");
+		}
+	} else if (isTelemetryPacket()) {
+		QString strMsg;
+		const TDataIDNames *pDataIDName = conarrDataIDNames;
+		while (pDataIDName->m_nFirstID != 0) {
+			if ((telemetryPacket().getDataId() >= pDataIDName->m_nFirstID) &&
+				(telemetryPacket().getDataId() <= pDataIDName->m_nLastID)) {
+				strMsg += pDataIDName->m_strName + " : ";
+				break;
+			}
+			++pDataIDName;
+		}
+		if (strMsg.isEmpty()) strMsg += "???Unknown Data ID : ";
+
+		switch (telemetryPacket().getPrimId()) {
+			case PRIM_ID_DATA_FRAME:
+				strMsg += QObject::tr("Data: 0x%1 (%2)", "CSportRxBuffer").arg(telemetryPacket().getValue(), 4, 16, QChar('0'))
+							.arg(telemetryPacket().getValue());
+				break;
+			case PRIM_ID_CONFIG_MODE_EXIT_FRAME:
+				strMsg += QObject::tr("Exit Cal/Cfg Mode", "CSportRxBuffer");
+				break;
+			case PRIM_ID_CONFIG_MODE_ENTER_FRAME:
+				strMsg += QObject::tr("Enter Cal/Cfg Mode", "CSportRxBuffer");
+				break;
+			case PRIM_ID_CLIENT_READ_CAL_FRAME:
+				strMsg += QObject::tr("Read Cal", "CSportRxBuffer");
+				break;
+			case PRIM_ID_CLIENT_WRITE_CAL_FRAME:
+				strMsg += QObject::tr("Write Cal", "CSportRxBuffer");
+				break;
+			case PRIM_ID_SERVER_RESP_CAL_FRAME:
+				strMsg += QObject::tr("Cal Resp", "CSportRxBuffer");
+				break;
+		}
+
+		if ((telemetryPacket().getPrimId() == PRIM_ID_CLIENT_READ_CAL_FRAME) ||
+			(telemetryPacket().getPrimId() == PRIM_ID_CLIENT_WRITE_CAL_FRAME) ||
+			(telemetryPacket().getPrimId() == PRIM_ID_SERVER_RESP_CAL_FRAME)) {
+			uint32_t nValue = telemetryPacket().getValue();
+			strMsg += ", ";
+			if (telemetryPacket().getDataId() == DATA_ID_SxR_FIRST) {
+				switch (nValue % 256) {
+					case 0x80:
+						strMsg += "Wing type";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": ";
+							switch (nValue / 256) {
+								case 0:
+									strMsg += "Normal";
+									break;
+								case 1:
+									strMsg += "Delta";
+									break;
+								case 2:
+									strMsg += "VTail";
+									break;
+								default:
+									strMsg += "VTail ??? (value out-of-range)";	// FrSky Config Script defaults invalid to last value
+									break;
+							}
+						}
+						break;
+					case 0x81:
+						strMsg += "Mounting type";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": ";
+							switch (nValue / 256) {
+								case 0:
+									strMsg += "Horz";
+									break;
+								case 1:
+									strMsg += "Horz rev.";
+									break;
+								case 2:
+									strMsg += "Vert";
+									break;
+								case 3:
+									strMsg += "Vert rev.";
+									break;
+								default:
+									strMsg += "Vert rev. ??? (value out-of-range)";	// FrSky Config Script defaults invalid to last value
+									break;
+							}
+						}
+						break;
+					case 0x9C:
+						strMsg += "SxR functions";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": ";
+							switch (nValue / 256) {
+								case 0:
+									strMsg += "Disable";
+									break;
+								case 1:
+									strMsg += "Enable";
+									break;
+								default:
+									strMsg += "Enable ??? (value out-of-range)";	// FrSky Config Script defaults invalid to last value
+									break;
+							}
+						}
+						break;
+					case 0xAA:
+						strMsg += "Quick Mode";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": ";
+							switch ((nValue / 256) & 0x0001) {		// Note: FrSky's scripts does a bit-and of the value so only 0 and 1 are considered options (but only on 0xAA, Quick Mode)
+								case 0:
+									strMsg += "Disable";
+									break;
+								case 1:
+									strMsg += "Enable";
+									break;
+							}
+						}
+						break;
+					case 0xA8:
+						strMsg += "CH5 mode";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": ";
+							switch (nValue / 256) {
+								case 0:
+									strMsg += "AIL2";
+									break;
+								case 1:
+									strMsg += "AUX1";
+									break;
+								default:
+									strMsg += "AUX1 ??? (value out-of-range)";	// FrSky Config Script defaults invalid to last value
+									break;
+							}
+						}
+						break;
+					case 0xA9:
+						strMsg += "CH6 mode";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": ";
+							switch (nValue / 256) {
+								case 0:
+									strMsg += "ELE2";
+									break;
+								case 1:
+									strMsg += "AUX2";
+									break;
+								default:
+									strMsg += "AUX2 ??? (value out-of-range)";	// FrSky Config Script defaults invalid to last value
+									break;
+							}
+						}
+						break;
+					case 0x82:
+						strMsg += "AIL direction";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": ";
+							switch (nValue / 256) {
+								case 255:
+									strMsg += "Normal";
+									break;
+								case 0:
+									strMsg += "Invers";
+									break;
+								default:
+									strMsg += "Normal ??? (value out-of-range)";	// FrSky Config Script defaults invalid to "normal"
+									break;
+							}
+						}
+						break;
+					case 0x83:
+						strMsg += "ELE direction";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": ";
+							switch (nValue / 256) {
+								case 255:
+									strMsg += "Normal";
+									break;
+								case 0:
+									strMsg += "Invers";
+									break;
+								default:
+									strMsg += "Normal ??? (value out-of-range)";	// FrSky Config Script defaults invalid to "normal"
+									break;
+							}
+						}
+						break;
+					case 0x84:
+						strMsg += "RUD direction";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": ";
+							switch (nValue / 256) {
+								case 255:
+									strMsg += "Normal";
+									break;
+								case 0:
+									strMsg += "Invers";
+									break;
+								default:
+									strMsg += "Normal ??? (value out-of-range)";	// FrSky Config Script defaults invalid to "normal"
+									break;
+							}
+						}
+						break;
+					case 0x9A:
+						strMsg += "AIL2 direction";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": ";
+							switch (nValue / 256) {
+								case 255:
+									strMsg += "Normal";
+									break;
+								case 0:
+									strMsg += "Invers";
+									break;
+								default:
+									strMsg += "Normal ??? (value out-of-range)";	// FrSky Config Script defaults invalid to "normal"
+									break;
+							}
+						}
+						break;
+					case 0x9B:
+						strMsg += "ELE2 direction";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": ";
+							switch (nValue / 256) {
+								case 255:
+									strMsg += "Normal";
+									break;
+								case 0:
+									strMsg += "Invers";
+									break;
+								default:
+									strMsg += "Normal ??? (value out-of-range)";	// FrSky Config Script defaults invalid to "normal"
+									break;
+							}
+						}
+						break;
+					case 0x85:
+						strMsg += "AIL stab gain";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": " + QString("%1%%").arg(nValue/256);
+							if ((nValue / 256) > 200) strMsg += " ??? (value out-of-range)";
+						}
+						break;
+					case 0x86:
+						strMsg += "ELE stab gain";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": " + QString("%1%%").arg(nValue/256);
+							if ((nValue / 256) > 200) strMsg += " ??? (value out-of-range)";
+						}
+						break;
+					case 0x87:
+						strMsg += "RUD stab gain";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": " + QString("%1%%").arg(nValue/256);
+							if ((nValue / 256) > 200) strMsg += " ??? (value out-of-range)";
+						}
+						break;
+					case 0x88:
+						strMsg += "AIL autolvl gain";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": " + QString("%1%%").arg(nValue/256);
+							if ((nValue / 256) > 200) strMsg += " ??? (value out-of-range)";
+						}
+						break;
+					case 0x89:
+						strMsg += "ELE autolvl gain";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": " + QString("%1%%").arg(nValue/256);
+							if ((nValue / 256) > 200) strMsg += " ??? (value out-of-range)";
+						}
+						break;
+					case 0x8C:
+						strMsg += "ELE hover gain";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": " + QString("%1%%").arg(nValue/256);
+							if ((nValue / 256) > 200) strMsg += " ??? (value out-of-range)";
+						}
+						break;
+					case 0x8D:
+						strMsg += "RUD hover gain";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": " + QString("%1%%").arg(nValue/256);
+							if ((nValue / 256) > 200) strMsg += " ??? (value out-of-range)";
+						}
+						break;
+					case 0x8E:
+						strMsg += "AIL knife gain";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": " + QString("%1%%").arg(nValue/256);
+							if ((nValue / 256) > 200) strMsg += " ??? (value out-of-range)";
+						}
+						break;
+					case 0x90:
+						strMsg += "RUD knife gain";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": " + QString("%1%%").arg(nValue/256);
+							if ((nValue / 256) > 200) strMsg += " ??? (value out-of-range)";
+						}
+						break;
+					case 0x91:
+						strMsg += "AIL autolvl offset";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							int32_t nScaled = nValue/256;
+							nScaled -= 0x6C;
+							nScaled -= 20;
+							strMsg += ": " + QString("%1%%").arg(nScaled);
+							if ((nScaled < -20) || (nScaled > 20)) strMsg += " ??? (value out-of-range)";
+						}
+						break;
+					case 0x92:
+						strMsg += "ELE autolvl offset";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							int32_t nScaled = nValue/256;
+							nScaled -= 0x6C;
+							nScaled -= 20;
+							strMsg += ": " + QString("%1%%").arg(nScaled);
+							if ((nScaled < -20) || (nScaled > 20)) strMsg += " ??? (value out-of-range)";
+						}
+						break;
+					case 0x95:
+						strMsg += "ELE hover offset";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							int32_t nScaled = nValue/256;
+							nScaled -= 0x6C;
+							nScaled -= 20;
+							strMsg += ": " + QString("%1%%").arg(nScaled);
+							if ((nScaled < -20) || (nScaled > 20)) strMsg += " ??? (value out-of-range)";
+						}
+						break;
+					case 0x96:
+						strMsg += "RUD hover offset";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							int32_t nScaled = nValue/256;
+							nScaled -= 0x6C;
+							nScaled -= 20;
+							strMsg += ": " + QString("%1%%").arg(nScaled);
+							if ((nScaled < -20) || (nScaled > 20)) strMsg += " ??? (value out-of-range)";
+						}
+						break;
+					case 0x97:
+						strMsg += "AIL knife offset";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							int32_t nScaled = nValue/256;
+							nScaled -= 0x6C;
+							nScaled -= 20;
+							strMsg += ": " + QString("%1%%").arg(nScaled);
+							if ((nScaled < -20) || (nScaled > 20)) strMsg += " ??? (value out-of-range)";
+						}
+						break;
+					case 0x99:
+						strMsg += "RUD knife offset";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							int32_t nScaled = nValue/256;
+							nScaled -= 0x6C;
+							nScaled -= 20;
+							strMsg += ": " + QString("%1%%").arg(nScaled);
+							if ((nScaled < -20) || (nScaled > 20)) strMsg += " ??? (value out-of-range)";
+						}
+						break;
+
+					case 0x9E:
+						strMsg += "IMU X";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							int32_t nScaled = nValue/256;
+							nScaled = (nScaled % 256) * 256 + (nScaled / 256);
+							nScaled = nScaled - ((nValue/256) & 0x8000) * 2;
+							strMsg += ": " + QString("%1").arg(double(nScaled)/1000, 0, 'f', 2);
+						}
+						break;
+					case 0x9F:
+						strMsg += "IMU Y";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							int32_t nScaled = nValue/256;
+							nScaled = (nScaled % 256) * 256 + (nScaled / 256);
+							nScaled = nScaled - ((nValue/256) & 0x8000) * 2;
+							strMsg += ": " + QString("%1").arg(double(nScaled)/1000, 0, 'f', 2);
+						}
+						break;
+					case 0xA0:
+						strMsg += "IMU Z";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							int32_t nScaled = nValue/256;
+							nScaled = (nScaled % 256) * 256 + (nScaled / 256);
+							nScaled = nScaled - ((nValue/256) & 0x8000) * 2;
+							strMsg += ": " + QString("%1").arg(double(nScaled)/1000, 0, 'f', 2);
+						}
+						break;
+					case 0x9D:
+						strMsg += "Cal Orientation";
+						if (telemetryPacket().getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+							strMsg += ": ";
+							switch (nValue / 256) {
+								case 0:
+									strMsg += "up";
+									break;
+								case 1:
+									strMsg += "down";
+									break;
+								case 2:
+									strMsg += "left";
+									break;
+								case 3:
+									strMsg += "right";
+									break;
+								case 4:
+									strMsg += "forward";
+									break;
+								case 5:
+									strMsg += "back";
+									break;
+								default:
+									strMsg += "??? (unknown orientation)";
+									break;
+							}
+						}
+						break;
+
+					default:
+						strMsg += QObject::tr("** Unknown Setting (0x%1)", "CSportRxBuffer").arg(nValue/256, 2, 16, QChar('0'));
+						break;
+				}
+			}	// TODO : Add other sensors here
+		}
+
+
+		// TODO : Finish Implementing Telemetry Logging
+		return (strMsg.isEmpty() ? QObject::tr("Unknown Telemetry Packet", "CSportRxBuffer") : strMsg);
+	} else if (haveTelemetryPoll()) {
+		return QObject::tr("Poll for PhysID: %1", "CSportRxBuffer").arg(telemetryPollPacket().getPhysicalId());
+	}
+
+	return QObject::tr("*** Unknown Packet", "CSportRxBuffer");
+}
 
 // ============================================================================
 
