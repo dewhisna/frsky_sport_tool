@@ -164,14 +164,16 @@ QString CSportTelemetryPacket::logDetails() const
 		(getPrimId() == PRIM_ID_CLIENT_WRITE_CAL_FRAME) ||
 		(getPrimId() == PRIM_ID_SERVER_RESP_CAL_FRAME)) {
 		uint32_t nValue = getValue();
+		uint8_t nFieldId = nValue % 256;
+		nValue = nValue / 256;		// Here, the Frsky Calibration script ANDs this with 0xFFFF, the Config script does not
 		strMsg += ", ";
 		if (getDataId() == DATA_ID_SxR_FIRST) {
-			switch (nValue % 256) {
+			switch (nFieldId) {
 				case 0x80:
 					strMsg += "Wing type";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
 						strMsg += ": ";
-						switch (nValue / 256) {
+						switch (nValue) {
 							case 0:
 								strMsg += "Normal";
 								break;
@@ -191,7 +193,7 @@ QString CSportTelemetryPacket::logDetails() const
 					strMsg += "Mounting type";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
 						strMsg += ": ";
-						switch (nValue / 256) {
+						switch (nValue) {
 							case 0:
 								strMsg += "Horz";
 								break;
@@ -214,7 +216,7 @@ QString CSportTelemetryPacket::logDetails() const
 					strMsg += "SxR functions";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
 						strMsg += ": ";
-						switch (nValue / 256) {
+						switch (nValue) {
 							case 0:
 								strMsg += "Disable";
 								break;
@@ -231,7 +233,7 @@ QString CSportTelemetryPacket::logDetails() const
 					strMsg += "Quick Mode";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
 						strMsg += ": ";
-						switch ((nValue / 256) & 0x0001) {		// Note: FrSky's scripts does a bit-and of the value so only 0 and 1 are considered options (but only on 0xAA, Quick Mode)
+						switch (nValue & 0x0001) {		// Note: FrSky's scripts does a bit-and of the value so only 0 and 1 are considered options (but only on 0xAA, Quick Mode)
 							case 0:
 								strMsg += "Disable";
 								break;
@@ -245,7 +247,7 @@ QString CSportTelemetryPacket::logDetails() const
 					strMsg += "CH5 mode";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
 						strMsg += ": ";
-						switch (nValue / 256) {
+						switch (nValue) {
 							case 0:
 								strMsg += "AIL2";
 								break;
@@ -262,7 +264,7 @@ QString CSportTelemetryPacket::logDetails() const
 					strMsg += "CH6 mode";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
 						strMsg += ": ";
-						switch (nValue / 256) {
+						switch (nValue) {
 							case 0:
 								strMsg += "ELE2";
 								break;
@@ -279,7 +281,7 @@ QString CSportTelemetryPacket::logDetails() const
 					strMsg += "AIL direction";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
 						strMsg += ": ";
-						switch (nValue / 256) {
+						switch (nValue) {
 							case 255:
 								strMsg += "Normal";
 								break;
@@ -296,7 +298,7 @@ QString CSportTelemetryPacket::logDetails() const
 					strMsg += "ELE direction";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
 						strMsg += ": ";
-						switch (nValue / 256) {
+						switch (nValue) {
 							case 255:
 								strMsg += "Normal";
 								break;
@@ -313,7 +315,7 @@ QString CSportTelemetryPacket::logDetails() const
 					strMsg += "RUD direction";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
 						strMsg += ": ";
-						switch (nValue / 256) {
+						switch (nValue) {
 							case 255:
 								strMsg += "Normal";
 								break;
@@ -330,7 +332,7 @@ QString CSportTelemetryPacket::logDetails() const
 					strMsg += "AIL2 direction";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
 						strMsg += ": ";
-						switch (nValue / 256) {
+						switch (nValue) {
 							case 255:
 								strMsg += "Normal";
 								break;
@@ -347,7 +349,7 @@ QString CSportTelemetryPacket::logDetails() const
 					strMsg += "ELE2 direction";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
 						strMsg += ": ";
-						switch (nValue / 256) {
+						switch (nValue) {
 							case 255:
 								strMsg += "Normal";
 								break;
@@ -363,70 +365,70 @@ QString CSportTelemetryPacket::logDetails() const
 				case 0x85:
 					strMsg += "AIL stab gain";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += ": " + QString("%1%%").arg(nValue/256);
-						if ((nValue / 256) > 200) strMsg += " ??? (value out-of-range)";
+						strMsg += ": " + QString("%1%%").arg(nValue);
+						if (nValue > 200) strMsg += " ??? (value out-of-range)";
 					}
 					break;
 				case 0x86:
 					strMsg += "ELE stab gain";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += ": " + QString("%1%%").arg(nValue/256);
-						if ((nValue / 256) > 200) strMsg += " ??? (value out-of-range)";
+						strMsg += ": " + QString("%1%%").arg(nValue);
+						if (nValue > 200) strMsg += " ??? (value out-of-range)";
 					}
 					break;
 				case 0x87:
 					strMsg += "RUD stab gain";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += ": " + QString("%1%%").arg(nValue/256);
-						if ((nValue / 256) > 200) strMsg += " ??? (value out-of-range)";
+						strMsg += ": " + QString("%1%%").arg(nValue);
+						if (nValue > 200) strMsg += " ??? (value out-of-range)";
 					}
 					break;
 				case 0x88:
 					strMsg += "AIL autolvl gain";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += ": " + QString("%1%%").arg(nValue/256);
-						if ((nValue / 256) > 200) strMsg += " ??? (value out-of-range)";
+						strMsg += ": " + QString("%1%%").arg(nValue);
+						if (nValue > 200) strMsg += " ??? (value out-of-range)";
 					}
 					break;
 				case 0x89:
 					strMsg += "ELE autolvl gain";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += ": " + QString("%1%%").arg(nValue/256);
-						if ((nValue / 256) > 200) strMsg += " ??? (value out-of-range)";
+						strMsg += ": " + QString("%1%%").arg(nValue);
+						if (nValue > 200) strMsg += " ??? (value out-of-range)";
 					}
 					break;
 				case 0x8C:
 					strMsg += "ELE hover gain";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += ": " + QString("%1%%").arg(nValue/256);
-						if ((nValue / 256) > 200) strMsg += " ??? (value out-of-range)";
+						strMsg += ": " + QString("%1%%").arg(nValue);
+						if (nValue > 200) strMsg += " ??? (value out-of-range)";
 					}
 					break;
 				case 0x8D:
 					strMsg += "RUD hover gain";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += ": " + QString("%1%%").arg(nValue/256);
-						if ((nValue / 256) > 200) strMsg += " ??? (value out-of-range)";
+						strMsg += ": " + QString("%1%%").arg(nValue);
+						if (nValue > 200) strMsg += " ??? (value out-of-range)";
 					}
 					break;
 				case 0x8E:
 					strMsg += "AIL knife gain";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += ": " + QString("%1%%").arg(nValue/256);
-						if ((nValue / 256) > 200) strMsg += " ??? (value out-of-range)";
+						strMsg += ": " + QString("%1%%").arg(nValue);
+						if (nValue > 200) strMsg += " ??? (value out-of-range)";
 					}
 					break;
 				case 0x90:
 					strMsg += "RUD knife gain";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += ": " + QString("%1%%").arg(nValue/256);
-						if ((nValue / 256) > 200) strMsg += " ??? (value out-of-range)";
+						strMsg += ": " + QString("%1%%").arg(nValue);
+						if (nValue > 200) strMsg += " ??? (value out-of-range)";
 					}
 					break;
 				case 0x91:
 					strMsg += "AIL autolvl offset";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						int32_t nScaled = nValue/256;
+						int32_t nScaled = nValue;
 						nScaled -= 0x6C;
 						nScaled -= 20;
 						strMsg += ": " + QString("%1%%").arg(nScaled);
@@ -436,7 +438,7 @@ QString CSportTelemetryPacket::logDetails() const
 				case 0x92:
 					strMsg += "ELE autolvl offset";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						int32_t nScaled = nValue/256;
+						int32_t nScaled = nValue;
 						nScaled -= 0x6C;
 						nScaled -= 20;
 						strMsg += ": " + QString("%1%%").arg(nScaled);
@@ -446,7 +448,7 @@ QString CSportTelemetryPacket::logDetails() const
 				case 0x95:
 					strMsg += "ELE hover offset";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						int32_t nScaled = nValue/256;
+						int32_t nScaled = nValue;
 						nScaled -= 0x6C;
 						nScaled -= 20;
 						strMsg += ": " + QString("%1%%").arg(nScaled);
@@ -456,7 +458,7 @@ QString CSportTelemetryPacket::logDetails() const
 				case 0x96:
 					strMsg += "RUD hover offset";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						int32_t nScaled = nValue/256;
+						int32_t nScaled = nValue;
 						nScaled -= 0x6C;
 						nScaled -= 20;
 						strMsg += ": " + QString("%1%%").arg(nScaled);
@@ -466,7 +468,7 @@ QString CSportTelemetryPacket::logDetails() const
 				case 0x97:
 					strMsg += "AIL knife offset";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						int32_t nScaled = nValue/256;
+						int32_t nScaled = nValue;
 						nScaled -= 0x6C;
 						nScaled -= 20;
 						strMsg += ": " + QString("%1%%").arg(nScaled);
@@ -476,7 +478,7 @@ QString CSportTelemetryPacket::logDetails() const
 				case 0x99:
 					strMsg += "RUD knife offset";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						int32_t nScaled = nValue/256;
+						int32_t nScaled = nValue;
 						nScaled -= 0x6C;
 						nScaled -= 20;
 						strMsg += ": " + QString("%1%%").arg(nScaled);
@@ -487,27 +489,27 @@ QString CSportTelemetryPacket::logDetails() const
 				case 0x9E:
 					strMsg += "IMU X";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						int32_t nScaled = nValue/256;
+						int32_t nScaled = nValue;
 						nScaled = (nScaled % 256) * 256 + (nScaled / 256);
-						nScaled = nScaled - ((nValue/256) & 0x8000) * 2;
+						nScaled = nScaled - (nValue & 0x8000) * 2;
 						strMsg += ": " + QString("%1").arg(double(nScaled)/1000, 0, 'f', 2);
 					}
 					break;
 				case 0x9F:
 					strMsg += "IMU Y";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						int32_t nScaled = nValue/256;
+						int32_t nScaled = nValue;
 						nScaled = (nScaled % 256) * 256 + (nScaled / 256);
-						nScaled = nScaled - ((nValue/256) & 0x8000) * 2;
+						nScaled = nScaled - (nValue & 0x8000) * 2;
 						strMsg += ": " + QString("%1").arg(double(nScaled)/1000, 0, 'f', 2);
 					}
 					break;
 				case 0xA0:
 					strMsg += "IMU Z";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						int32_t nScaled = nValue/256;
+						int32_t nScaled = nValue;
 						nScaled = (nScaled % 256) * 256 + (nScaled / 256);
-						nScaled = nScaled - ((nValue/256) & 0x8000) * 2;
+						nScaled = nScaled - (nValue & 0x8000) * 2;
 						strMsg += ": " + QString("%1").arg(double(nScaled)/1000, 0, 'f', 2);
 					}
 					break;
@@ -515,7 +517,7 @@ QString CSportTelemetryPacket::logDetails() const
 					strMsg += "Cal Orientation";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
 						strMsg += ": ";
-						switch (nValue / 256) {
+						switch (nValue) {
 							case 0:
 								strMsg += "up";
 								break;
@@ -542,7 +544,7 @@ QString CSportTelemetryPacket::logDetails() const
 					break;
 
 				default:
-					strMsg += QObject::tr("** Unknown Setting (0x%1)", "CSportRxBuffer").arg(nValue/256, 2, 16, QChar('0'));
+					strMsg += QObject::tr("** Unknown Setting (0x%1: 0x%02)", "CSportRxBuffer").arg(nFieldId, 2, 16, QChar('0')).arg(nValue, 2, 16, QChar('0'));
 					break;
 			}
 		}	// TODO : Add other sensors here
