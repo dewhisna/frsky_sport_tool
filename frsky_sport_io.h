@@ -304,6 +304,7 @@ PACK(union CSportTelemetryPacket
 		return *this;
 	}
 	uint8_t crc() const;
+	QString logDetails() const;
 private:
 	struct {
 		uint8_t m_physicalId;		// Device Physical ID (with included 3-bit CRC)
@@ -338,6 +339,7 @@ PACK(union CSportTelemetryPollPacket
 		m_physicalId = src.m_physicalId;
 		return *this;
 	}
+	QString logDetails() const;
 private:
 	struct {
 		uint8_t m_physicalId;		// Device Physical ID (with included 3-bit CRC)
@@ -380,6 +382,7 @@ PACK(union CSportFirmwarePacket
 				(m_data[3] << 24));
 	}
 	uint8_t crc() const;
+	QString logDetails() const;
 	struct {
 		uint8_t m_physicalId;		// Device Physical ID (with included 3-bit CRC)
 		uint8_t m_primId;			// Communications Primitive
@@ -508,7 +511,7 @@ public:
 
 	QByteArray pushByte(uint8_t byte);		// Returns any extraneous discarded bytes from before a valid receive so they can be logged
 
-	QString logDetails();			// Called by processFrame() functions to annotate log information
+	QString logDetails() const;			// Called by processFrame() functions to annotate log information
 
 protected:
 	union {
