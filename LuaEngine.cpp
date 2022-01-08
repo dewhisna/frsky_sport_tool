@@ -33,6 +33,8 @@ extern "C" {
 #include "defs.h"
 
 #include <QMessageBox>
+#include <QFile>
+#include <QByteArray>
 
 // Libraries to include:
 #include "LuaEvents.h"
@@ -199,6 +201,29 @@ void CLuaEngine::luaRegisterLibraries(lua_State *pState)
 {
 	my_luaL_openlibs(pState);
 	registerBitmapClass(pState);
+
+	// Load backward compatibility shims:
+	QFile file(":/bit32.lua");
+	if (file.open(QIODevice::ReadOnly)) {
+		QByteArray baBit32 = file.readAll();
+		file.close();
+		int lstatus = luaL_loadbufferx(pState, baBit32.data(), baBit32.size(), "bit32", nullptr);
+		if ((lstatus == LUA_OK) &&
+			((lstatus = lua_pcall(pState, 0, 1, 0)) == LUA_OK) &&
+			lua_istable(pState, -1)) {
+			lua_setglobal(pState, "bit32");
+		} else {
+			const char *pMsg = lua_tostring(pState, -1);
+			QString strMsg;
+			if (pMsg) strMsg = QString::fromUtf8(pMsg);		// TODO : UTF8 or Latin1 here?
+			if (strMsg.isEmpty()) strMsg = "???";
+			QMessageBox::critical(nullptr, QObject::tr("Lua Register Libraries Error", "CLuaEngine"),
+									QObject::tr("Failed to load internal bit32 compatibility library:", "CLuaEngine") + "\n\n" + strMsg);
+		}
+	} else {
+		QMessageBox::critical(nullptr, QObject::tr("Lua Register Libraries Error", "CLuaEngine"),
+								QObject::tr("Failed to load internal bit32 compatibility library from resources", "CLuaEngine"));
+	}
 }
 
 // ------------------------------------

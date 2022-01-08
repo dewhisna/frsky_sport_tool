@@ -6,5 +6,6 @@
 		<file>res/iconfinder_dedicated-server_4263512_512.png</file>
 		<file>res/iconfinder_dedicated-server_4263512_connected.png</file>
 		<file>res/iconfinder_dedicated-server_4263512_connected_512.png</file>
+		<file>bit32.lua</file>
 	</qresource>
 </RCC>
