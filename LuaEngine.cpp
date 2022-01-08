@@ -494,6 +494,9 @@ void CLuaEngine::luaError(lua_State * pState, ScriptState nError, const QString 
 	QString strErrorTitle;
 
 	switch (nError) {
+		case SCRIPT_NOFILE:
+			strErrorTitle = tr("Script Finished");
+			break;
 		case SCRIPT_SYNTAX_ERROR:
 			strErrorTitle = tr("Script syntax error");
 			break;
@@ -519,6 +522,7 @@ void CLuaEngine::luaError(lua_State * pState, ScriptState nError, const QString 
 	if (strMsg.isEmpty()) strMsg = strErrorTitle;
 
 	error(strErrorTitle, strMsg, bAcknowledge);
+	if (nError != SCRIPT_OK) emit scriptFinished(nError);	// Note: SCRIPT_OK exit code of 1 turns into dialog "accept"
 }
 
 // ----------------------------------------------------------------------------

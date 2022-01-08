@@ -50,6 +50,8 @@ CLuaScriptDlg::CLuaScriptDlg(CFrskySportIO &frskySportIO, const QString &strFile
 	connect(m_pLuaGeneral, SIGNAL(killKeyEvent(event_t)), m_pLuaEvents, SLOT(killKeyEvent(event_t)));
 	connect(m_pLuaEvents, SIGNAL(luaEvent(event_t)), m_pLuaEngine, SLOT(runLuaScript(event_t)));
 
+	connect(m_pLuaEngine, SIGNAL(scriptFinished(int)), this, SLOT(done(int)));
+
 	// Delay a second before opening the script and executing it to give
 	//	time for communications to run, specifically the telemetry polling,
 	//	before running a script that sends messages, particularly via poll push:

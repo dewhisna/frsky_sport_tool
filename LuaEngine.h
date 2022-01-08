@@ -124,6 +124,7 @@ public slots:
 
 signals:
 	void killKeyEvent(event_t nEvent);					// Signal for parent CLuaEvents::killKeyEvent
+	void scriptFinished(int nStatus);					// Signal for when the script has finished execution (nStatus == ScriptState at completion)
 
 protected:
 	static int luaPanic(lua_State *pState);
