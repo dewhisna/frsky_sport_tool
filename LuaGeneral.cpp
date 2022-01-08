@@ -214,10 +214,10 @@ static int luaSportTelemetryPush(lua_State * L)
 		if (CLuaGeneral::g_luaGeneral->haveTelemetryPoll(nPhysicalId) &&
 			CLuaGeneral::g_luaGeneral->isTelemetryPushAvailable(nPhysicalId)) {
 			// sensor is found, we queue it to transmit on push
-			emit CLuaGeneral::g_luaGeneral->pushTxSportPacket(packet, "From Lua Script");
+			emit CLuaGeneral::g_luaGeneral->pushTxSportPacket(packet, "(from Lua Script)");
 		} else {
 			// sensor not found, we send the frame to the SPORT line
-			emit CLuaGeneral::g_luaGeneral->sendTxSportPacket(packet, "From Lua Script");
+			emit CLuaGeneral::g_luaGeneral->sendTxSportPacket(packet, "(from Lua Script)");
 		}
 
 		lua_pushboolean(L, true);

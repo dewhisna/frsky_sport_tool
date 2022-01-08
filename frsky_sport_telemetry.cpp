@@ -53,9 +53,12 @@ void CFrskySportDeviceTelemetry::txSportPacket(const CSportTelemetryPacket &pack
 	m_txBufferLast.reset();
 	m_txBufferLast.pushPacketWithByteStuffing(packet);
 
+	QString strMsg = packet.logDetails();
+	if (!strMsg.isEmpty()) strMsg += " ";
+	strMsg += strLogDetail;
 	QByteArray arrBytes(1, 0x7E);	// Start of Frame
 	arrBytes.append(m_txBufferLast.data());
-	m_frskySportIO.logMessage(bIsPushResponse ? CFrskySportIO::LT_TXPUSH : CFrskySportIO::LT_TX, arrBytes, strLogDetail);
+	m_frskySportIO.logMessage(bIsPushResponse ? CFrskySportIO::LT_TXPUSH : CFrskySportIO::LT_TX, arrBytes, strMsg);
 	m_frskySportIO.port().write(bIsPushResponse ? arrBytes.mid(2) : arrBytes);	// For push, drop the SOF and PhysicalId
 	m_frskySportIO.port().flush();
 }
