@@ -44,7 +44,9 @@ QString CSaveLoadFileDialog::getSaveFileName(QWidget *parent,
 											QString *selectedFilter,
 											QFileDialog::Options options)
 {
-	if (lastPath().isEmpty()) setLastPath(dir);
+	if (!dir.isEmpty()) {
+		setLastPath(dir);
+	} else if (lastPath().isEmpty()) setLastPath(dir);
 
 	QPointer<QFileDialog> pDlg = new QFileDialog(parent, caption, lastPath(), filter);
 	pDlg->setFileMode(QFileDialog::AnyFile);
@@ -71,7 +73,9 @@ QString CSaveLoadFileDialog::getOpenFileName(QWidget *parent,
 											QString *selectedFilter,
 											QFileDialog::Options options)
 {
-	if (lastPath().isEmpty()) setLastPath(dir);
+	if (!dir.isEmpty()) {
+		setLastPath(dir);
+	} else if (lastPath().isEmpty()) setLastPath(dir);
 
 	QString strFilename = QFileDialog::getOpenFileName(parent, caption, lastPath(), filter, selectedFilter, options);
 	if (!strFilename.isEmpty()) setLastPath(strFilename);
