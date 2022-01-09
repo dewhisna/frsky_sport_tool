@@ -365,63 +365,63 @@ QString CSportTelemetryPacket::logDetails() const
 				case 0x85:
 					strMsg += "AIL stab gain";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += ": " + QString("%1%%").arg(nValue);
+						strMsg += ": " + QString("%1%").arg(nValue);
 						if (nValue > 200) strMsg += " ??? (value out-of-range)";
 					}
 					break;
 				case 0x86:
 					strMsg += "ELE stab gain";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += ": " + QString("%1%%").arg(nValue);
+						strMsg += ": " + QString("%1%").arg(nValue);
 						if (nValue > 200) strMsg += " ??? (value out-of-range)";
 					}
 					break;
 				case 0x87:
 					strMsg += "RUD stab gain";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += ": " + QString("%1%%").arg(nValue);
+						strMsg += ": " + QString("%1%").arg(nValue);
 						if (nValue > 200) strMsg += " ??? (value out-of-range)";
 					}
 					break;
 				case 0x88:
 					strMsg += "AIL autolvl gain";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += ": " + QString("%1%%").arg(nValue);
+						strMsg += ": " + QString("%1%").arg(nValue);
 						if (nValue > 200) strMsg += " ??? (value out-of-range)";
 					}
 					break;
 				case 0x89:
 					strMsg += "ELE autolvl gain";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += ": " + QString("%1%%").arg(nValue);
+						strMsg += ": " + QString("%1%").arg(nValue);
 						if (nValue > 200) strMsg += " ??? (value out-of-range)";
 					}
 					break;
 				case 0x8C:
 					strMsg += "ELE hover gain";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += ": " + QString("%1%%").arg(nValue);
+						strMsg += ": " + QString("%1%").arg(nValue);
 						if (nValue > 200) strMsg += " ??? (value out-of-range)";
 					}
 					break;
 				case 0x8D:
 					strMsg += "RUD hover gain";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += ": " + QString("%1%%").arg(nValue);
+						strMsg += ": " + QString("%1%").arg(nValue);
 						if (nValue > 200) strMsg += " ??? (value out-of-range)";
 					}
 					break;
 				case 0x8E:
 					strMsg += "AIL knife gain";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += ": " + QString("%1%%").arg(nValue);
+						strMsg += ": " + QString("%1%").arg(nValue);
 						if (nValue > 200) strMsg += " ??? (value out-of-range)";
 					}
 					break;
 				case 0x90:
 					strMsg += "RUD knife gain";
 					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += ": " + QString("%1%%").arg(nValue);
+						strMsg += ": " + QString("%1%").arg(nValue);
 						if (nValue > 200) strMsg += " ??? (value out-of-range)";
 					}
 					break;
@@ -431,7 +431,7 @@ QString CSportTelemetryPacket::logDetails() const
 						int32_t nScaled = nValue;
 						nScaled -= 0x6C;
 						nScaled -= 20;
-						strMsg += ": " + QString("%1%%").arg(nScaled);
+						strMsg += ": " + QString("%1%").arg(nScaled);
 						if ((nScaled < -20) || (nScaled > 20)) strMsg += " ??? (value out-of-range)";
 					}
 					break;
@@ -441,7 +441,7 @@ QString CSportTelemetryPacket::logDetails() const
 						int32_t nScaled = nValue;
 						nScaled -= 0x6C;
 						nScaled -= 20;
-						strMsg += ": " + QString("%1%%").arg(nScaled);
+						strMsg += ": " + QString("%1%").arg(nScaled);
 						if ((nScaled < -20) || (nScaled > 20)) strMsg += " ??? (value out-of-range)";
 					}
 					break;
@@ -451,7 +451,7 @@ QString CSportTelemetryPacket::logDetails() const
 						int32_t nScaled = nValue;
 						nScaled -= 0x6C;
 						nScaled -= 20;
-						strMsg += ": " + QString("%1%%").arg(nScaled);
+						strMsg += ": " + QString("%1%").arg(nScaled);
 						if ((nScaled < -20) || (nScaled > 20)) strMsg += " ??? (value out-of-range)";
 					}
 					break;
@@ -461,7 +461,7 @@ QString CSportTelemetryPacket::logDetails() const
 						int32_t nScaled = nValue;
 						nScaled -= 0x6C;
 						nScaled -= 20;
-						strMsg += ": " + QString("%1%%").arg(nScaled);
+						strMsg += ": " + QString("%1%").arg(nScaled);
 						if ((nScaled < -20) || (nScaled > 20)) strMsg += " ??? (value out-of-range)";
 					}
 					break;
@@ -471,7 +471,7 @@ QString CSportTelemetryPacket::logDetails() const
 						int32_t nScaled = nValue;
 						nScaled -= 0x6C;
 						nScaled -= 20;
-						strMsg += ": " + QString("%1%%").arg(nScaled);
+						strMsg += ": " + QString("%1%").arg(nScaled);
 						if ((nScaled < -20) || (nScaled > 20)) strMsg += " ??? (value out-of-range)";
 					}
 					break;
@@ -481,7 +481,7 @@ QString CSportTelemetryPacket::logDetails() const
 						int32_t nScaled = nValue;
 						nScaled -= 0x6C;
 						nScaled -= 20;
-						strMsg += ": " + QString("%1%%").arg(nScaled);
+						strMsg += ": " + QString("%1%").arg(nScaled);
 						if ((nScaled < -20) || (nScaled > 20)) strMsg += " ??? (value out-of-range)";
 					}
 					break;
