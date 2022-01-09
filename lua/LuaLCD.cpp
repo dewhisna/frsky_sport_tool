@@ -262,21 +262,30 @@ static uint8_t getFontHeight(LcdFlags flags)
 void CLuaLCD::drawText(coord_t x, coord_t y, const char * s, LcdFlags att)
 {
 	QPainter painter(&m_pixmap);
-	painter.setBrush(Qt::NoBrush);
-	painter.setPen(QPen(QBrush(QColor(QRgb(m_lcdColorTable[COLOR_IDX(att)]))), 1*LCD_RES_SCALING));
+	painter.setBrush(QBrush((att & INVERS) ? m_lcdColorTable[TEXT_INVERTED_BGCOLOR_INDEX] :
+											m_lcdColorTable[TEXT_BGCOLOR_INDEX], Qt::SolidPattern));
+	painter.setPen(QPen(QBrush(QColor(QRgb((att & INVERS) ? m_lcdColorTable[TEXT_INVERTED_COLOR_INDEX] :
+															m_lcdColorTable[TEXT_COLOR_INDEX]))), 1*LCD_RES_SCALING));
 	QFont font = painter.font();
+	font.setBold((att & BLINK) || (att & INVERS));
+	font.setUnderline(att & BLINK);
+	font.setItalic(att & BLINK);
 	font.setPixelSize(getFontHeight(att)*LCD_RES_SCALING);
 	painter.setFont(font);
 	QString strText = QString::fromUtf8(s);			// TODO: Should this be UTF8 or Latin1?
 	QFontMetrics fm(font);
 	QSize sz = fm.size(0, strText);
 	Qt::Alignment align = Qt::AlignLeft;
+	coord_t xadj = 0;
 	if (att & CENTERED) {
 		align = Qt::AlignHCenter;
+		xadj = sz.width()/2;
 	} else if (att & RIGHT) {
 		align = Qt::AlignRight;
+		xadj = sz.width()+1;
 	}
-	painter.drawText(QRect(QPoint(x*LCD_RES_SCALING, y*LCD_RES_SCALING), sz*LCD_RES_SCALING), align, strText);
+	if (att & INVERS) painter.fillRect(QRect(QPoint(x*LCD_RES_SCALING - xadj, y*LCD_RES_SCALING), sz), painter.brush());
+	painter.drawText(QRect(QPoint(x*LCD_RES_SCALING - xadj, y*LCD_RES_SCALING), sz), align, strText);
 	updateLCD();
 }
 
