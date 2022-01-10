@@ -136,6 +136,16 @@ CMainWindow::CMainWindow(QWidget *parent) :
 			CPersistentSettings::instance()->setLuaScreenTheme(pAction->data().toInt());
 		});
 	}
+
+	// Support for /scripts/ folder in AppImage:
+	QString strAppDir = qgetenv("APPDIR");
+	if (!strAppDir.isEmpty()) {
+		QString strScriptDir = strAppDir + "/scripts/";
+		QFileInfo fiScriptDir(strScriptDir);
+		if (fiScriptDir.exists() && fiScriptDir.isDir()) {
+			CPersistentSettings::instance()->setLuaScriptLastPath(strScriptDir);
+		}
+	}
 #endif
 
 	// --------------------------------
