@@ -30,9 +30,9 @@ echo $USER:U6aMy0wojraho | chpasswd -e
 apt-get update
 apt-get install -y software-properties-common apt-utils
 #sed -i '/^#\s*deb-src /s/^#\s*//' "/etc/apt/sources.list"
+apt-get install -y lsb-release
 apt-get install -y build-essential
 apt-get install -y pkg-config
-apt-get install -y cmake
 apt-get install -y gperf bison
 apt-get install -y libgl1-mesa-dev
 # Easiest to slurp in Qt5 build dependencies, since we are building Qt5 as a pre-requisite:
@@ -48,6 +48,13 @@ apt-get install -y curl git xz-utils
 apt-get install -y zip unzip
 apt-get install -y joe
 apt-get install -y sudo
+# Need a newer cmake than the system package, so just grab the latest:
+wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/kitware.list >/dev/null
+apt-get update
+apt-get install -y cmake
+# Dependencies for Lua.  It also needs libdl, but that's part of the libc6 package:
+apt-get install -y libreadline-dev
 
 
 # ----------------------
@@ -147,6 +154,9 @@ cd $PROJECT_DIR/appimage/frsky_sport_tool/
 cp $PROJECT_DIR/build-frsky_sport_tool-$BUILD_TARGET/Release/frsky_sport_tool .
 cp $PROJECT_DIR/frsky_sport_tool/frsky_sport_tool.desktop .
 cp $PROJECT_DIR/frsky_sport_tool/frsky_sport_tool4.png .
+cp -r $PROJECT_DIR/frsky_sport_tool/scripts .
+rm scripts/SxR_R9S_Calibrate_tele.lua
+rm scripts/SxR_R9S_Configure_tele.lua
 linuxdeployqt frsky_sport_tool.desktop -appimage -no-translations -qmake=$QT_DIR/bin/qmake
 
 
