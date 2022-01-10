@@ -149,12 +149,20 @@ event_t CLuaEvents::keyToEvent(int nQtKey)
 		case Qt::Key_Return:		// Return is main keyboard
 		case Qt::Key_Enter:			// Enter is Keypad
 			return KEY_ENTER;
+		case Qt::Key_Home:
+			return KEY_MODEL;
 		case Qt::Key_Up:
 			return KEY_UP;
+		case Qt::Key_Escape:
+			return KEY_EXIT;
 		case Qt::Key_Down:
 			return KEY_DOWN;
+		case Qt::Key_Tab:
+			return KEY_TELEM;
 		case Qt::Key_Right:
 			return KEY_RIGHT;
+		case Qt::Key_End:
+			return KEY_RADIO;
 		case Qt::Key_Left:
 			return KEY_LEFT;
 	}
