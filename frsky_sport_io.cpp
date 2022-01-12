@@ -38,7 +38,7 @@ namespace {
 		{ DATA_ID_VARIO_FIRST, DATA_ID_VARIO_LAST, "VARIO" },
 		{ DATA_ID_CURR_FIRST, DATA_ID_CURR_LAST, "CURR" },
 		{ DATA_ID_VFAS_FIRST, DATA_ID_VFAS_LAST, "VFAS" },
-		{ DATA_ID_CELLS_FIRST, DATA_ID_CELLS_LAST, "CELLS" },
+		{ DATA_ID_CELLS_FIRST, DATA_ID_CELLS_LAST, "LVSS" },
 		{ DATA_ID_T1_FIRST, DATA_ID_T1_LAST, "T1" },
 		{ DATA_ID_T2_FIRST, DATA_ID_T2_LAST, "T2" },
 		{ DATA_ID_RPM_FIRST, DATA_ID_RPM_LAST, "RPM" },
@@ -70,14 +70,14 @@ namespace {
 		{ DATA_ID_RB3040_CH7_8_FIRST, DATA_ID_RB3040_CH7_8_LAST, "RB3040 CH7/8" },
 		{ DATA_ID_X8R_FIRST, DATA_ID_X8R_LAST, "X8R" },
 		{ DATA_ID_SxR_FIRST, DATA_ID_SxR_LAST, "SxR" },
-		{ DATA_ID_GASSUIT_TEMP1_FIRST, DATA_ID_GASSUIT_TEMP1_LAST, "GASSUIT TEMP1" },
-		{ DATA_ID_GASSUIT_TEMP2_FIRST, DATA_ID_GASSUIT_TEMP2_LAST, "GASSUIT TEMP2" },
-		{ DATA_ID_GASSUIT_SPEED_FIRST, DATA_ID_GASSUIT_SPEED_LAST, "GASSUIT SPEED" },
-		{ DATA_ID_GASSUIT_RES_VOL_FIRST, DATA_ID_GASSUIT_RES_VOL_LAST, "GASSUIT RES VOL" },
-		{ DATA_ID_GASSUIT_RES_PERC_FIRST, DATA_ID_GASSUIT_RES_PERC_LAST, "GASSUIT RES PERC" },
-		{ DATA_ID_GASSUIT_FLOW_FIRST, DATA_ID_GASSUIT_FLOW_LAST, "GASSUIT FLOW" },
-		{ DATA_ID_GASSUIT_MAX_FLOW_FIRST, DATA_ID_GASSUIT_MAX_FLOW_LAST, "GASSUIT MAX FLOW" },
-		{ DATA_ID_GASSUIT_AVG_FLOW_FIRST, DATA_ID_GASSUIT_AVG_FLOW_LAST, "GASSUIT AVG FLOW" },
+		{ DATA_ID_GASSUITE_TEMP1_FIRST, DATA_ID_GASSUITE_TEMP1_LAST, "GASSUITE TEMP1" },
+		{ DATA_ID_GASSUITE_TEMP2_FIRST, DATA_ID_GASSUITE_TEMP2_LAST, "GASSUITE TEMP2" },
+		{ DATA_ID_GASSUITE_SPEED_FIRST, DATA_ID_GASSUITE_SPEED_LAST, "GASSUITE SPEED" },
+		{ DATA_ID_GASSUITE_RES_VOL_FIRST, DATA_ID_GASSUITE_RES_VOL_LAST, "GASSUITE RES VOL" },
+		{ DATA_ID_GASSUITE_RES_PERC_FIRST, DATA_ID_GASSUITE_RES_PERC_LAST, "GASSUITE RES PERC" },
+		{ DATA_ID_GASSUITE_FLOW_FIRST, DATA_ID_GASSUITE_FLOW_LAST, "GASSUITE FLOW" },
+		{ DATA_ID_GASSUITE_MAX_FLOW_FIRST, DATA_ID_GASSUITE_MAX_FLOW_LAST, "GASSUITE MAX FLOW" },
+		{ DATA_ID_GASSUITE_AVG_FLOW_FIRST, DATA_ID_GASSUITE_AVG_FLOW_LAST, "GASSUITE AVG FLOW" },
 		{ DATA_ID_SBEC_POWER_FIRST, DATA_ID_SBEC_POWER_LAST, "SBEC POWER" },
 		{ DATA_ID_DIY_STREAM_FIRST, DATA_ID_DIY_STREAM_LAST, "DIY STREAM" },
 		{ DATA_ID_DIY_FIRST, DATA_ID_DIY_LAST, "DIY" },
@@ -127,21 +127,46 @@ uint8_t CSportTelemetryPacket::crc() const
 QString CSportTelemetryPacket::logDetails() const
 {
 	QString strMsg;
-	const TDataIDNames *pDataIDName = conarrDataIDNames;
-	while (pDataIDName->m_nFirstID != 0) {
-		if ((getDataId() >= pDataIDName->m_nFirstID) &&
-			(getDataId() <= pDataIDName->m_nLastID)) {
-			strMsg += pDataIDName->m_strName + " : ";
-			break;
+	if (getDataId() != 0) {
+		const TDataIDNames *pDataIDName = conarrDataIDNames;
+		while (pDataIDName->m_nFirstID != 0) {
+			if ((getDataId() >= pDataIDName->m_nFirstID) &&
+				(getDataId() <= pDataIDName->m_nLastID)) {
+				strMsg += pDataIDName->m_strName;
+				if (getPhysicalId() < TELEMETRY_PHYS_ID_COUNT) {
+					if (pDataIDName->m_nFirstID != pDataIDName->m_nLastID) {
+						strMsg += QString("(%1:%2)").arg(getPhysicalId()).arg(getDataId()-pDataIDName->m_nFirstID);
+					} else {
+						strMsg += QString("(%1)").arg(getPhysicalId());
+					}
+				} else {
+					if (pDataIDName->m_nFirstID != pDataIDName->m_nLastID) {
+						strMsg += QString("(:%1)").arg(getDataId()-pDataIDName->m_nFirstID);
+					}
+				}
+				strMsg += " : ";
+				break;
+			}
+			++pDataIDName;
 		}
-		++pDataIDName;
+		if (strMsg.isEmpty()) strMsg += "???Unknown Data ID : ";
+	} else {
+		if (getPhysicalId() < TELEMETRY_PHYS_ID_COUNT) {
+			strMsg += QString("(%1) : ").arg(getPhysicalId());
+		}
 	}
-	if (strMsg.isEmpty()) strMsg += "???Unknown Data ID : ";
 
 	switch (getPrimId()) {
+		case PRIM_ID_DEVICE_PRESENT_FRAME:
+			if (getPhysicalId() < TELEMETRY_PHYS_ID_COUNT) {
+				strMsg += QObject::tr("Device Present", "CSportRxBuffer");
+			}
+			if (getValue() != 0) {
+				strMsg += QString(" (unexpected value of 0x%1 (%2)").arg(getValue(), 4, 16, QChar('0')).arg(getValue());
+			}
+			break;
 		case PRIM_ID_DATA_FRAME:
-			strMsg += QObject::tr("Data: 0x%1 (%2)", "CSportRxBuffer").arg(getValue(), 4, 16, QChar('0'))
-						.arg(getValue());
+			strMsg += QObject::tr("Data: ");
 			break;
 		case PRIM_ID_CONFIG_MODE_EXIT_FRAME:
 			strMsg += QObject::tr("Exit Cal/Cfg Mode", "CSportRxBuffer");
@@ -160,14 +185,17 @@ QString CSportTelemetryPacket::logDetails() const
 			break;
 	}
 
+	uint32_t nValue = getValue();
+	uint8_t nFieldId = nValue % 256;
+	nValue = nValue / 256;
+
 	if ((getPrimId() == PRIM_ID_CLIENT_READ_CAL_FRAME) ||
 		(getPrimId() == PRIM_ID_CLIENT_WRITE_CAL_FRAME) ||
 		(getPrimId() == PRIM_ID_SERVER_RESP_CAL_FRAME)) {
-		uint32_t nValue = getValue();
-		uint8_t nFieldId = nValue % 256;
-		nValue = nValue / 256;		// Here, the Frsky Calibration script ANDs this with 0xFFFF, the Config script does not
+		// Note: the Frsky Calibration script ANDs the "value" here with 0xFFFF, the Config script does not (but it's always zero anyway)
 		strMsg += ", ";
-		if (getDataId() == DATA_ID_SxR_FIRST) {
+		if ((getDataId() >= DATA_ID_SxR_FIRST) &&
+			(getDataId() <= DATA_ID_SxR_LAST)) {
 			switch (nFieldId) {
 				case 0x80:
 					strMsg += "Wing type";
@@ -544,12 +572,57 @@ QString CSportTelemetryPacket::logDetails() const
 					break;
 
 				default:
-					strMsg += QObject::tr("** Unknown Setting (0x%1: 0x%02)", "CSportRxBuffer").arg(nFieldId, 2, 16, QChar('0')).arg(nValue, 2, 16, QChar('0'));
+					strMsg += QObject::tr("** Unknown SxR Setting (0x%1: 0x%02)", "CSportRxBuffer").arg(nFieldId, 2, 16, QChar('0')).arg(nValue, 2, 16, QChar('0'));
 					break;
 			}
-		}	// TODO : Add other sensors here
+		} else if ((getDataId() >= DATA_ID_CELLS_FIRST) &&
+				   (getDataId() <= DATA_ID_CELLS_LAST)) {
+			switch (nFieldId) {
+				case 0x01:
+					strMsg += "PhysId";
+					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+						strMsg += QString("=%1").arg(nValue);
+						if (nValue >= TELEMETRY_PHYS_ID_COUNT) strMsg += " ??? (value out-of-range)";
+					}
+					break;
+				case 0x0C:
+					strMsg += "Firmware Version";
+					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+						strMsg += QString("=%1.%2").arg(nValue >> 4).arg(nValue & 0x0F);
+					}
+					break;
+				case 0x0D:
+					strMsg += "AppId";
+					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+						strMsg += QString("=%1").arg(nValue);
+						if (nValue >= 16) strMsg += " ??? (value out-of-range)";
+					}
+					break;
+				case 0x22:
+					strMsg += "DataRate";
+					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+						strMsg += QString("=%1ms").arg(nValue * 100);
+						if (nValue >= 256) strMsg += " ??? (value out-of-range)";
+					}
+					break;
+			}
+		}	// TODO : Add other sensors cal/cfg messages here
+	} else if (getPrimId() == PRIM_ID_DATA_FRAME) {
+		if ((getDataId() >= DATA_ID_CELLS_FIRST) &&
+			(getDataId() <= DATA_ID_CELLS_LAST)) {
+			uint8_t nNumCells = (nFieldId >> 4) & 0x0F;
+			uint8_t nCellIndex = nFieldId & 0x0F;
+			strMsg += QString("#Cells=%1").arg(nNumCells);
+			if (nCellIndex < nNumCells) {
+				strMsg += QString(", Cell#%1=%2v").arg(nCellIndex+1).arg(double(nValue & 0x0FFF)/500, 0, 'f', 3);
+				if ((nCellIndex+1) < nNumCells) {
+					strMsg += QString(", Cell#%1=%2v").arg(nCellIndex+2).arg(double((nValue >> 12) & 0x0FFF)/500, 0, 'f', 3);
+				}
+			}
+		} else {	// TODO : Add other sensors data messages here
+		   strMsg += QObject::tr("0x%1 (%2)", "CSportRxBuffer").arg(getValue(), 4, 16, QChar('0')).arg(getValue());
+		}
 	}
-
 
 	// TODO : Finish Implementing Telemetry Logging
 	return (strMsg.isEmpty() ? QObject::tr("Unknown Telemetry Packet", "CSportRxBuffer") : strMsg);
