@@ -577,36 +577,44 @@ QString CSportTelemetryPacket::logDetails() const
 			}
 		} else if ((getDataId() >= DATA_ID_CELLS_FIRST) &&
 				   (getDataId() <= DATA_ID_CELLS_LAST)) {
-			switch (nFieldId) {
-				case 0x01:
-					strMsg += "PhysId";
-					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += QString("=%1").arg(nValue);
-						if (nValue >= TELEMETRY_PHYS_ID_COUNT) strMsg += " ??? (value out-of-range)";
-					}
-					break;
-				case 0x0C:
-					strMsg += "Firmware Version";
-					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += QString("=%1.%2").arg(nValue >> 4).arg(nValue & 0x0F);
-					}
-					break;
-				case 0x0D:
-					strMsg += "AppId";
-					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += QString("=%1").arg(nValue);
-						if (nValue >= 16) strMsg += " ??? (value out-of-range)";
-					}
-					break;
-				case 0x22:
-					strMsg += "DataRate";
-					if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
-						strMsg += QString("=%1ms").arg(nValue * 100);
-						if (nValue >= 256) strMsg += " ??? (value out-of-range)";
-					}
-					break;
-			}
+		} else if ((getDataId() >= DATA_ID_ALT_FIRST) &&
+				   (getDataId() <= DATA_ID_ALT_LAST)) {
+		} else if ((getDataId() >= DATA_ID_VARIO_FIRST) &&
+				   (getDataId() <= DATA_ID_VARIO_LAST)) {
 		}	// TODO : Add other sensors cal/cfg messages here
+		// Common Sensor Messages:
+		switch (nFieldId) {
+			case 0x00:
+				strMsg += "Set Defaults";
+				break;
+			case 0x01:
+				strMsg += "PhysId";
+				if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+					strMsg += QString("=%1").arg(nValue);
+					if (nValue >= TELEMETRY_PHYS_ID_COUNT) strMsg += " ??? (value out-of-range)";
+				}
+				break;
+			case 0x0C:
+				strMsg += "Firmware Version";
+				if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+					strMsg += QString("=%1.%2").arg(nValue >> 4).arg(nValue & 0x0F);
+				}
+				break;
+			case 0x0D:
+				strMsg += "AppId";
+				if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+					strMsg += QString("=%1").arg(nValue);
+					if (nValue >= 16) strMsg += " ??? (value out-of-range)";
+				}
+				break;
+			case 0x22:
+				strMsg += "DataRate";
+				if (getPrimId() != PRIM_ID_CLIENT_READ_CAL_FRAME) {
+					strMsg += QString("=%1ms").arg(nValue * 100);
+					if (nValue >= 256) strMsg += " ??? (value out-of-range)";
+				}
+				break;
+		}
 	} else if (getPrimId() == PRIM_ID_DATA_FRAME) {
 		if ((getDataId() >= DATA_ID_CELLS_FIRST) &&
 			(getDataId() <= DATA_ID_CELLS_LAST)) {
@@ -619,6 +627,14 @@ QString CSportTelemetryPacket::logDetails() const
 					strMsg += QString(", Cell#%1=%2v").arg(nCellIndex+2).arg(double((nValue >> 12) & 0x0FFF)/500, 0, 'f', 3);
 				}
 			}
+		} else if ((getDataId() >= DATA_ID_ALT_FIRST) &&
+				(getDataId() <= DATA_ID_ALT_LAST)) {
+			int32_t nSValue = (int32_t)getValue();
+			strMsg += QString("%1 (m)").arg(double(nSValue)/100, 0, 'f', 2);
+		} else if ((getDataId() >= DATA_ID_VARIO_FIRST) &&
+				(getDataId() <= DATA_ID_VARIO_LAST)) {
+			int32_t nSValue = (int32_t)getValue();
+			strMsg += QString("%1 (m/s)").arg(double(nSValue)/100, 0, 'f', 2);
 		} else {	// TODO : Add other sensors data messages here
 		   strMsg += QObject::tr("0x%1 (%2)", "CSportTelemetryPacket").arg(getValue(), 4, 16, QChar('0')).arg(getValue());
 		}
