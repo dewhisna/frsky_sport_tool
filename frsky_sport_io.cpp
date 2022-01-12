@@ -159,29 +159,29 @@ QString CSportTelemetryPacket::logDetails() const
 	switch (getPrimId()) {
 		case PRIM_ID_DEVICE_PRESENT_FRAME:
 			if (getPhysicalId() < TELEMETRY_PHYS_ID_COUNT) {
-				strMsg += QObject::tr("Device Present", "CSportRxBuffer");
+				strMsg += QObject::tr("Device Present", "CSportTelemetryPacket");
 			}
 			if (getValue() != 0) {
-				strMsg += QString(" (unexpected value of 0x%1 (%2)").arg(getValue(), 4, 16, QChar('0')).arg(getValue());
+				strMsg += QObject::tr(" (unexpected value of 0x%1 (%2)", "CSportTelemetryPacket").arg(getValue(), 4, 16, QChar('0')).arg(getValue());
 			}
 			break;
 		case PRIM_ID_DATA_FRAME:
-			strMsg += QObject::tr("Data: ");
+			strMsg += QObject::tr("Data: ", "CSportTelemetryPacket");
 			break;
 		case PRIM_ID_CONFIG_MODE_EXIT_FRAME:
-			strMsg += QObject::tr("Exit Cal/Cfg Mode", "CSportRxBuffer");
+			strMsg += QObject::tr("Exit Cal/Cfg Mode", "CSportTelemetryPacket");
 			break;
 		case PRIM_ID_CONFIG_MODE_ENTER_FRAME:
-			strMsg += QObject::tr("Enter Cal/Cfg Mode", "CSportRxBuffer");
+			strMsg += QObject::tr("Enter Cal/Cfg Mode", "CSportTelemetryPacket");
 			break;
 		case PRIM_ID_CLIENT_READ_CAL_FRAME:
-			strMsg += QObject::tr("Read Cal", "CSportRxBuffer");
+			strMsg += QObject::tr("Read Cal", "CSportTelemetryPacket");
 			break;
 		case PRIM_ID_CLIENT_WRITE_CAL_FRAME:
-			strMsg += QObject::tr("Write Cal", "CSportRxBuffer");
+			strMsg += QObject::tr("Write Cal", "CSportTelemetryPacket");
 			break;
 		case PRIM_ID_SERVER_RESP_CAL_FRAME:
-			strMsg += QObject::tr("Cal Resp", "CSportRxBuffer");
+			strMsg += QObject::tr("Cal Resp", "CSportTelemetryPacket");
 			break;
 	}
 
@@ -572,7 +572,7 @@ QString CSportTelemetryPacket::logDetails() const
 					break;
 
 				default:
-					strMsg += QObject::tr("** Unknown SxR Setting (0x%1: 0x%02)", "CSportRxBuffer").arg(nFieldId, 2, 16, QChar('0')).arg(nValue, 2, 16, QChar('0'));
+					strMsg += QObject::tr("** Unknown SxR Setting (0x%1: 0x%02)", "CSportTelemetryPacket").arg(nFieldId, 2, 16, QChar('0')).arg(nValue, 2, 16, QChar('0'));
 					break;
 			}
 		} else if ((getDataId() >= DATA_ID_CELLS_FIRST) &&
@@ -620,19 +620,19 @@ QString CSportTelemetryPacket::logDetails() const
 				}
 			}
 		} else {	// TODO : Add other sensors data messages here
-		   strMsg += QObject::tr("0x%1 (%2)", "CSportRxBuffer").arg(getValue(), 4, 16, QChar('0')).arg(getValue());
+		   strMsg += QObject::tr("0x%1 (%2)", "CSportTelemetryPacket").arg(getValue(), 4, 16, QChar('0')).arg(getValue());
 		}
 	}
 
 	// TODO : Finish Implementing Telemetry Logging
-	return (strMsg.isEmpty() ? QObject::tr("Unknown Telemetry Packet", "CSportRxBuffer") : strMsg);
+	return (strMsg.isEmpty() ? QObject::tr("Unknown Telemetry Packet", "CSportTelemetryPacket") : strMsg);
 }
 
 // ============================================================================
 
 QString CSportTelemetryPollPacket::logDetails() const
 {
-	return QObject::tr("Poll for PhysID: %1", "CSportRxBuffer").arg(getPhysicalId());
+	return QObject::tr("Poll for PhysID: %1", "CSportTelemetryPollPacket").arg(getPhysicalId());
 }
 
 // ============================================================================
@@ -652,21 +652,21 @@ QString CSportFirmwarePacket::logDetails() const
 
 	switch (m_cmd) {
 		case PRIM_REQ_FLASHMODE:			// Request to start flash mode
-			return QObject::tr("Request Flash Mode", "CSportRxBuffer");
+			return QObject::tr("Request Flash Mode", "CSportFirmwarePacket");
 
 		case PRIM_REQ_VERSION:				// Request to send Version Info
-			return QObject::tr("Request Version", "CSportRxBuffer");
+			return QObject::tr("Request Version", "CSportFirmwarePacket");
 
 		case PRIM_CMD_UPLOAD:				// Command upload mode ??
-			strTemp = QObject::tr("Command Upload??", "CSportRxBuffer");
-			strTemp += QObject::tr(": ?Addr: 0x%1", "CSportRxBuffer").arg(dataValue(), 8, 16, QChar('0'));	// Is this really the address?
+			strTemp = QObject::tr("Command Upload??", "CSportFirmwarePacket");
+			strTemp += QObject::tr(": ?Addr: 0x%1", "CSportFirmwarePacket").arg(dataValue(), 8, 16, QChar('0'));	// Is this really the address?
 			return strTemp;
 
 		case PRIM_CMD_DOWNLOAD:				// Command download mode
-			return QObject::tr("Command Download", "CSportRxBuffer");
+			return QObject::tr("Command Download", "CSportFirmwarePacket");
 
 		case PRIM_DATA_WORD:				// Receive Data Word Xfer
-			strTemp = QObject::tr("Data Xfer", "CSportRxBuffer");
+			strTemp = QObject::tr("Data Xfer", "CSportFirmwarePacket");
 			strTemp += QString(": %1.%2.%3.%4: ndx %5")
 					.arg(m_data[0], 2, 16, QChar('0'))
 					.arg(m_data[1], 2, 16, QChar('0'))
@@ -677,22 +677,22 @@ QString CSportFirmwarePacket::logDetails() const
 			return strTemp;
 
 		case PRIM_DATA_EOF:					// Data End-of-File
-			return QObject::tr("Data EOF", "CSportRxBuffer");
+			return QObject::tr("Data EOF", "CSportFirmwarePacket");
 
 		// ------------------------
 
 		case PRIM_ACK_FLASHMODE:			// Device ACK Flash Mode and is present
-			return QObject::tr("Flash Mode ACK", "CSportRxBuffer");
+			return QObject::tr("Flash Mode ACK", "CSportFirmwarePacket");
 
 		case PRIM_ACK_VERSION:			// Device ACK Version Request
-			strTemp = QObject::tr("Version ACK", "CSportRxBuffer");
-			strTemp += QObject::tr(": Version=0x%1", "CSportRxBuffer").arg(dataValue(), 8, 16, QChar('0'));
+			strTemp = QObject::tr("Version ACK", "CSportFirmwarePacket");
+			strTemp += QObject::tr(": Version=0x%1", "CSportFirmwarePacket").arg(dataValue(), 8, 16, QChar('0'));
 			return strTemp;
 
 		case PRIM_REQ_DATA_ADDR:		// Device requests specific file address from firmware image
-			strTemp = QObject::tr("Req Data", "CSportRxBuffer");
-			strTemp += QObject::tr(", Addr=0x%1", "CSportRxBuffer").arg(dataValue(), 8, 16, QChar('0'));
-			strTemp += QObject::tr(", or ?Data Xfer: %1.%2.%3.%4: ndx %5", "CSportRxBuffer")
+			strTemp = QObject::tr("Req Data", "CSportFirmwarePacket");
+			strTemp += QObject::tr(", Addr=0x%1", "CSportFirmwarePacket").arg(dataValue(), 8, 16, QChar('0'));
+			strTemp += QObject::tr(", or ?Data Xfer: %1.%2.%3.%4: ndx %5", "CSportFirmwarePacket")
 					.arg(m_data[0], 2, 16, QChar('0'))
 					.arg(m_data[1], 2, 16, QChar('0'))
 					.arg(m_data[2], 2, 16, QChar('0'))
@@ -701,15 +701,15 @@ QString CSportFirmwarePacket::logDetails() const
 			return strTemp;
 
 		case PRIM_END_DOWNLOAD:			// Device reports end-of-download (complete)
-			return QObject::tr("End Download", "CSportRxBuffer");
+			return QObject::tr("End Download", "CSportFirmwarePacket");
 
 		case PRIM_DATA_CRC_ERR:			// Device reports CRC failure
-			return QObject::tr("Data Error Response (CRC?)", "CSportRxBuffer");
+			return QObject::tr("Data Error Response (CRC?)", "CSportFirmwarePacket");
 
 		// ------------------------
 
 		default:
-			return QObject::tr("*** Unexpected/Unknown Firmware Packet", "CSportRxBuffer");
+			return QObject::tr("*** Unexpected/Unknown Firmware Packet", "CSportFirmwarePacket");
 	}
 }
 
