@@ -581,6 +581,16 @@ QString CSportTelemetryPacket::logDetails() const
 				   (getDataId() <= DATA_ID_ALT_LAST)) {
 		} else if ((getDataId() >= DATA_ID_VARIO_FIRST) &&
 				   (getDataId() <= DATA_ID_VARIO_LAST)) {
+		} else if ((getDataId() >= DATA_ID_GPS_LONG_LATI_FIRST) &&
+				   (getDataId() <= DATA_ID_GPS_LONG_LATI_LAST)) {
+		} else if ((getDataId() >= DATA_ID_GPS_ALT_FIRST) &&
+				   (getDataId() <= DATA_ID_GPS_ALT_LAST)) {
+		} else if ((getDataId() >= DATA_ID_GPS_SPEED_FIRST) &&
+				   (getDataId() <= DATA_ID_GPS_SPEED_LAST)) {
+		} else if ((getDataId() >= DATA_ID_GPS_COURS_FIRST) &&
+				   (getDataId() <= DATA_ID_GPS_COURS_LAST)) {
+		} else if ((getDataId() >= DATA_ID_GPS_TIME_DATE_FIRST) &&
+				   (getDataId() <= DATA_ID_GPS_TIME_DATE_LAST)) {
 		}	// TODO : Add other sensors cal/cfg messages here
 		// Common Sensor Messages:
 		switch (nFieldId) {
@@ -627,14 +637,45 @@ QString CSportTelemetryPacket::logDetails() const
 					strMsg += QString(", Cell#%1=%2v").arg(nCellIndex+2).arg(double((nValue >> 12) & 0x0FFF)/500, 0, 'f', 3);
 				}
 			}
-		} else if ((getDataId() >= DATA_ID_ALT_FIRST) &&
-				(getDataId() <= DATA_ID_ALT_LAST)) {
-			int32_t nSValue = (int32_t)getValue();
-			strMsg += QString("%1 (m)").arg(double(nSValue)/100, 0, 'f', 2);
 		} else if ((getDataId() >= DATA_ID_VARIO_FIRST) &&
-				(getDataId() <= DATA_ID_VARIO_LAST)) {
+				   (getDataId() <= DATA_ID_VARIO_LAST)) {
 			int32_t nSValue = (int32_t)getValue();
 			strMsg += QString("%1 (m/s)").arg(double(nSValue)/100, 0, 'f', 2);
+		} else if (((getDataId() >= DATA_ID_ALT_FIRST) &&
+					(getDataId() <= DATA_ID_ALT_LAST)) ||
+				   ((getDataId() >= DATA_ID_GPS_ALT_FIRST) &&
+					(getDataId() <= DATA_ID_GPS_ALT_LAST))) {
+			int32_t nSValue = (int32_t)getValue();
+			strMsg += QString("%1 (m)").arg(double(nSValue)/100, 0, 'f', 2);
+		} else if ((getDataId() >= DATA_ID_GPS_SPEED_FIRST) &&
+				   (getDataId() <= DATA_ID_GPS_SPEED_LAST)) {
+			int32_t nSValue = (int32_t)getValue();
+			strMsg += QString("%1 (kts)").arg(double(nSValue)/1000, 0, 'f', 3);
+		} else if ((getDataId() >= DATA_ID_GPS_LONG_LATI_FIRST) &&
+				   (getDataId() <= DATA_ID_GPS_LONG_LATI_LAST)) {
+			int32_t nGPSValue = (getValue() & 0x3FFFFFFF);
+			nGPSValue = (nGPSValue * 5) / 3;
+			if (getValue() & (1 << 30)) nGPSValue = -nGPSValue;
+			if (getValue() & (1 << 31)) {
+				strMsg += QString("%1 Long.").arg(double(nGPSValue)/1000000);
+			} else {
+				strMsg += QString("%1 Lat.").arg(double(nGPSValue)/1000000);
+			}
+		} else if ((getDataId() >= DATA_ID_GPS_TIME_DATE_FIRST) &&
+				   (getDataId() <= DATA_ID_GPS_TIME_DATE_LAST)) {
+			if (getValue() & 0x000000FF) {
+				static const QString arrMonths[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+				uint16_t nYear = (uint16_t) ((getValue() & 0xff000000) >> 24) + 2000;  // SPORT GPS year is only two digits
+				uint8_t nMonth = (uint8_t) ((getValue() & 0x00ff0000) >> 16);
+				uint8_t nDay = (uint8_t) ((getValue() & 0x0000ff00) >> 8);
+				QString strMonth = ((nMonth >= 1) && (nMonth <= 12)) ? arrMonths[nMonth-1] : QString("%1").arg(nMonth);
+				strMsg += QString("Date: %1 %2 %3").arg(nDay).arg(strMonth).arg(nYear);
+			} else {
+				uint8_t nHour = (uint8_t) ((getValue() & 0xff000000) >> 24);
+				uint8_t nMin = (uint8_t) ((getValue() & 0x00ff0000) >> 16);
+				uint8_t nSec = (uint8_t) ((getValue() & 0x0000ff00) >> 8);
+				strMsg += QString("Time: %1:%2:%3 UTC").arg(nHour, 2, 10, QChar('0')).arg(nMin, 2, 10, QChar('0')).arg(nSec, 2, 10, QChar('0'));
+			}
 		} else {	// TODO : Add other sensors data messages here
 		   strMsg += QObject::tr("0x%1 (%2)", "CSportTelemetryPacket").arg(getValue(), 4, 16, QChar('0')).arg(getValue());
 		}
